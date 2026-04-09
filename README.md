@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Excito Project Structure
 
 This repository uses a monorepo layout:
@@ -31,3 +32,6 @@ npm run dev
 & .\.venv\Scripts\python.exe manage.py migrate
 & .\.venv\Scripts\python.exe manage.py createsuperuser
 ```
+=======
+# myexcito
+>>>>>>> b8b0d810bb91e1e6891d3d6e8a0e35316cdec736
