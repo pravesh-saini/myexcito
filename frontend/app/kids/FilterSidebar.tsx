@@ -1,0 +1,234 @@
+
+'use client';
+
+import { useState } from 'react';
+
+interface FilterSidebarProps {
+  selectedCategory: string;
+  setSelectedCategory: (category: string) => void;
+  selectedBrand: string;
+  setSelectedBrand: (brand: string) => void;
+  priceRange: number[];
+  setPriceRange: (range: number[]) => void;
+}
+
+export default function FilterSidebar({
+  selectedCategory,
+  setSelectedCategory,
+  selectedBrand,
+  setSelectedBrand,
+  priceRange,
+  setPriceRange
+}: FilterSidebarProps) {
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const categories = [
+    { id: 'all', name: 'All Products' },
+    { id: 'tops', name: 'Tops & Shirts' },
+    { id: 'bottoms', name: 'Bottoms' },
+    { id: 'shoes', name: 'Shoes' },
+    { id: 'outerwear', name: 'Outerwear' },
+    { id: 'accessories', name: 'Accessories' }
+  ];
+
+  const brands = [
+    { id: 'all', name: 'All Brands' },
+    { id: 'excito', name: 'Excito' },
+    { id: 'nike', name: 'Nike' },
+    { id: 'adidas', name: 'Adidas' },
+    { id: 'puma', name: 'Puma' }
+  ];
+
+  const ageGroups = [
+    { id: 'all', name: 'All Ages' },
+    { id: 'toddler', name: 'Toddler (2-4Y)' },
+    { id: 'kids', name: 'Kids (5-12Y)' },
+    { id: 'youth', name: 'Youth (13-16Y)' }
+  ];
+
+  const sizes = ['XS', 'S', 'M', 'L', 'XL'];
+  const colors = ['Black', 'White', 'Gray', 'Navy', 'Blue', 'Red', 'Green', 'Pink', 'Yellow'];
+
+  const sidebarContent = (
+    <div className="space-y-6">
+      <div className="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-2xl border border-gray-200/60 dark:border-gray-800">
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Categories</h3>
+        <div className="space-y-2">
+          {categories.map((category) => (
+            <label key={category.id} className="flex items-center cursor-pointer">
+              <input
+                type="radio"
+                name="category"
+                value={category.id}
+                checked={selectedCategory === category.id}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="mr-3 cursor-pointer"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">{category.name}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-2xl border border-gray-200/60 dark:border-gray-800">
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Brand</h3>
+        <div className="space-y-2">
+          {brands.map((brand) => (
+            <label key={brand.id} className="flex items-center cursor-pointer">
+              <input
+                type="radio"
+                name="brand"
+                value={brand.id}
+                checked={selectedBrand === brand.id}
+                onChange={(e) => setSelectedBrand(e.target.value)}
+                className="mr-3 cursor-pointer"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">{brand.name}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-2xl border border-gray-200/60 dark:border-gray-800">
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Age Group</h3>
+        <div className="space-y-2">
+          {ageGroups.map((group) => (
+            <label key={group.id} className="flex items-center cursor-pointer">
+              <input type="radio" name="ageGroup" value={group.id} className="mr-3 cursor-pointer" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">{group.name}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-2xl border border-gray-200/60 dark:border-gray-800">
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Price Range</h3>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600 dark:text-gray-400">₹{priceRange[0]}</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">₹{priceRange[1]}</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="300"
+            value={priceRange[1]}
+            onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+            className="w-full cursor-pointer"
+          />
+          <div className="flex gap-2">
+            <input
+              type="number"
+              value={priceRange[0]}
+              onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
+              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-xl text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
+              min="0"
+              max="300"
+            />
+            <input
+              type="number"
+              value={priceRange[1]}
+              onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-xl text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
+              min="0"
+              max="300"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-2xl border border-gray-200/60 dark:border-gray-800">
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Size</h3>
+        <div className="grid grid-cols-3 gap-2">
+          {sizes.map((size) => (
+            <button
+              key={size}
+              className="border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm text-gray-800 dark:text-gray-200 hover:border-gray-900 dark:hover:border-gray-200 transition-colors whitespace-nowrap cursor-pointer"
+            >
+              {size}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-2xl border border-gray-200/60 dark:border-gray-800">
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Color</h3>
+        <div className="grid grid-cols-4 gap-2">
+          {colors.map((color) => (
+            <button
+              key={color}
+              className={`w-8 h-8 rounded-full border-2 border-gray-300 dark:border-gray-700 hover:border-gray-900 dark:hover:border-gray-200 transition-colors cursor-pointer ${
+                color === 'Black'
+                  ? 'bg-black'
+                  : color === 'White'
+                    ? 'bg-white'
+                    : color === 'Gray'
+                      ? 'bg-gray-400'
+                      : color === 'Navy'
+                        ? 'bg-blue-900'
+                        : color === 'Blue'
+                          ? 'bg-blue-500'
+                          : color === 'Red'
+                            ? 'bg-red-500'
+                            : color === 'Green'
+                              ? 'bg-green-500'
+                              : color === 'Pink'
+                                ? 'bg-pink-400'
+                                : color === 'Yellow'
+                                  ? 'bg-yellow-400'
+                                  : 'bg-gray-300'
+              }`}
+              title={color}
+            ></button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <button
+        onClick={() => setIsFilterOpen(!isFilterOpen)}
+			className="lg:hidden mb-4 bg-gray-900 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 whitespace-nowrap cursor-pointer shadow-sm"
+      >
+        <i className="ri-filter-line"></i>
+        Filters
+      </button>
+
+		{/* Mobile: slide-in panel */}
+		<div className={`lg:hidden fixed inset-0 z-40 ${isFilterOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+			<div
+				className={`absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity ${
+					isFilterOpen ? 'opacity-100 animate-fade-in' : 'opacity-0'
+				}`}
+				onClick={() => setIsFilterOpen(false)}
+			/>
+			<div
+        className={`absolute left-0 top-0 h-full w-[85vw] max-w-[320px] bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 shadow-2xl p-4 overflow-y-auto transform transition-transform duration-300 ${
+					isFilterOpen ? 'translate-x-0' : '-translate-x-full'
+				}`}
+			>
+				<div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Filters</h2>
+					<button
+						type="button"
+						onClick={() => setIsFilterOpen(false)}
+            className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
+						aria-label="Close filters"
+					>
+            <i className="ri-close-line text-xl text-gray-700 dark:text-gray-200" />
+					</button>
+				</div>
+				{sidebarContent}
+				<div className="h-8" />
+			</div>
+		</div>
+
+		{/* Desktop */}
+		<div className="hidden lg:block w-full lg:w-64">
+			<div className="lg:sticky lg:top-24">{sidebarContent}</div>
+		</div>
+    </>
+  );
+}

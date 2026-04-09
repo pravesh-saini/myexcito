@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Excito Admin{% endblock %}</title>
+  <script>
+    tailwind.config = {
+      important: '#admin-app',
+      corePlugins: { preflight: false }
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .sidebar-link.active { background: linear-gradient(135deg, #1a1a1a 0%, #333 100%); }
+    .sidebar-link:hover { background: rgba(255,255,255,0.08); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div id="admin-app" class="bg-gray-50 min-h-screen">
+
+  {% if user.is_authenticated and user.is_staff %}
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-900 text-white flex flex-col flex-shrink-0 overflow-y-auto">
+      <!-- Logo -->
+      <div class="px-6 py-6 border-b border-gray-700">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 bg-white rounded-lg flex items-center justify-center">
+            <span class="text-gray-900 font-black text-lg">E</span>
+          </div>
+          <div>
+            <span class="text-white font-bold text-xl tracking-wide">EXCITO</span>
+            <p class="text-gray-400 text-xs">Admin Panel</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nav -->
+      <nav class="flex-1 px-4 py-6 space-y-1">
+        <p class="text-gray-500 text-xs uppercase tracking-widest font-semibold px-2 mb-3">Main</p>
+        <a href="{% url 'custom_admin_dashboard' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'custom_admin_dashboard' %}active{% endif %} flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-300 hover:text-white transition-all text-sm">
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h7v7H3zM3 17h7v4H3zM14 3h7v11h-7zM14 17h7v4h-7z"/>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+
+        <p class="text-gray-500 text-xs uppercase tracking-widest font-semibold px-2 mt-6 mb-3">Catalog</p>
+        <a href="{% url 'admin_products' %}"
+           class="sidebar-link {% if 'product' in request.resolver_match.url_name %}active{% endif %} flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-300 hover:text-white transition-all text-sm">
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+          </svg>
+          <span>Products</span>
+        </a>
+
+        <p class="text-gray-500 text-xs uppercase tracking-widest font-semibold px-2 mt-6 mb-3">Sales</p>
+        <a href="{% url 'admin_orders' %}"
+           class="sidebar-link {% if 'order' in request.resolver_match.url_name %}active{% endif %} flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-300 hover:text-white transition-all text-sm">
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <span>Orders</span>
+        </a>
+      </nav>
+
+      <!-- User info -->
+      <div class="px-4 py-4 border-t border-gray-700">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 bg-gray-600 rounded-full flex items-center justify-center">
+            <span class="text-white font-semibold text-sm">{{ user.username|first|upper }}</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-white text-sm font-medium truncate">{{ user.username }}</p>
+            <p class="text-gray-400 text-xs">Administrator</p>
+          </div>
+          <a href="{% url 'custom_admin_logout' %}" title="Logout"
+             class="text-gray-400 hover:text-red-400 transition-colors p-1 rounded">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Top bar -->
+      <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between flex-shrink-0">
+        <div>
+          <h1 class="text-xl font-semibold text-gray-900">{% block page_title %}Dashboard{% endblock %}</h1>
+          <p class="text-sm text-gray-500">{% block page_subtitle %}Welcome back, {{ user.username }}{% endblock %}</p>
+        </div>
+        <div class="flex items-center space-x-4">
+          <a href="{{ FRONTEND_URL }}/" target="_blank" class="text-sm text-gray-500 hover:text-gray-800 flex items-center space-x-1 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+            <span>View Store</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Messages -->
+      {% if messages %}
+      <div class="px-8 pt-4">
+        {% for msg in messages %}
+        <div class="mb-3 px-4 py-3 rounded-lg text-sm font-medium flex items-center justify-between
+          {% if msg.tags == 'error' %}bg-red-50 text-red-700 border border-red-200
+          {% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+          <span>{{ msg }}</span>
+          <button onclick="this.parentElement.remove()" class="ml-4 opacity-60 hover:opacity-100">✕</button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Page content -->
+      <main class="flex-1 overflow-y-auto px-8 py-6">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  {% else %}
+    {% block auth_content %}{% endblock %}
+  {% endif %}
+
+  {% block extra_scripts %}{% endblock %}
+  </div>
+</body>
+</html>

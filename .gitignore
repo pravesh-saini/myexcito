@@ -1,0 +1,43 @@
+# Next.js
+**/.next/
+**/node_modules/
+**/out/
+**/.nextdev*.log
+
+# Environment files
+.env
+.env.*
+!**/.env.example
+
+# Python virtual environments
+.venv/
+venv/
+backend/venv/
+
+# Python caches
+**/__pycache__/
+**/*.py[cod]
+
+# Django dev DB + uploads
+backend/db.sqlite3
+backend/media/
+
+# Ignore images by default; keep only approved design assets
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.webp
+**/*.gif
+**/*.svg
+
+# Keep only theme/background images for frontend
+!frontend/public/theme/**
+!frontend/public/themes/**
+!frontend/public/bg/**
+!frontend/public/background/**
+!frontend/public/backgrounds/**
+
+# OS / editor
+**/.DS_Store
+Thumbs.db
+.vscode/

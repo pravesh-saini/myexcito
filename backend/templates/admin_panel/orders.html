@@ -1,0 +1,104 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Orders — Excito Admin{% endblock %}
+{% block page_title %}Orders{% endblock %}
+{% block page_subtitle %}Manage and track all customer orders{% endblock %}
+
+{% block content %}
+
+<!-- Toolbar -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+  <form method="GET" class="flex items-center gap-3 flex-wrap">
+    <div class="relative">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <input type="text" name="search" value="{{ search }}" placeholder="Search by name or email..."
+        class="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-gray-400 w-64" />
+    </div>
+    <select name="status" class="border border-gray-200 rounded-xl text-sm py-2.5 px-4 bg-white focus:outline-none cursor-pointer">
+      <option value="">All Statuses</option>
+      <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+      <option value="processing" {% if status_filter == 'processing' %}selected{% endif %}>Processing</option>
+      <option value="shipped" {% if status_filter == 'shipped' %}selected{% endif %}>Shipped</option>
+      <option value="delivered" {% if status_filter == 'delivered' %}selected{% endif %}>Delivered</option>
+      <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+    </select>
+    <button type="submit" class="bg-gray-900 text-white text-sm px-5 py-2.5 rounded-xl hover:bg-gray-700 transition-colors">Filter</button>
+    {% if search or status_filter %}
+    <a href="{% url 'admin_orders' %}" class="text-sm text-gray-500 hover:text-gray-800">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b border-gray-100">
+        <tr>
+          <th class="text-left text-xs text-gray-400 font-semibold px-6 py-4">ORDER</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">CUSTOMER</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">ITEMS</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">AMOUNT</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">PAYMENT</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">DATE</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">STATUS</th>
+          <th class="text-right text-xs text-gray-400 font-semibold px-6 py-4">ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for order in orders %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-6 py-4">
+            <a href="{% url 'admin_order_detail' order.pk %}" class="font-bold text-gray-900 hover:text-blue-600">#{{ order.id }}</a>
+          </td>
+          <td class="px-4 py-4">
+            <p class="font-medium text-gray-800">{{ order.first_name }} {{ order.last_name }}</p>
+            <p class="text-xs text-gray-400">{{ order.email }}</p>
+          </td>
+          <td class="px-4 py-4">
+            <span class="text-gray-700">{{ order.items.count }} item{{ order.items.count|pluralize }}</span>
+          </td>
+          <td class="px-4 py-4 font-semibold text-gray-900">₹{{ order.total_amount }}</td>
+          <td class="px-4 py-4">
+            <span class="text-gray-700 capitalize">{{ order.payment_mode|default:"cod" }}</span>
+          </td>
+          <td class="px-4 py-4 text-gray-500">{{ order.created_at|date:"d M Y" }}<br><span class="text-xs text-gray-400">{{ order.created_at|time:"H:i" }}</span></td>
+          <td class="px-4 py-4">
+            <span class="px-3 py-1 rounded-full text-xs font-semibold capitalize
+              {% if order.status == 'pending' %}bg-amber-100 text-amber-700
+              {% elif order.status == 'delivered' %}bg-green-100 text-green-700
+              {% elif order.status == 'cancelled' %}bg-red-100 text-red-700
+              {% elif order.status == 'shipped' %}bg-blue-100 text-blue-700
+              {% elif order.status == 'processing' %}bg-purple-100 text-purple-700
+              {% else %}bg-gray-100 text-gray-600{% endif %}">
+              {{ order.status }}
+            </span>
+          </td>
+          <td class="px-6 py-4 text-right">
+            <a href="{% url 'admin_order_detail' order.pk %}"
+               class="inline-flex items-center space-x-1 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+              <span>View</span>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="px-6 py-16 text-center">
+            <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            <p class="text-gray-500 font-medium">No orders found</p>
+            <p class="text-gray-400 text-sm mt-1">Orders will appear here once customers place them.</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
