@@ -6,7 +6,7 @@
 {% block content %}
 
 <!-- Stat cards -->
-<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6 mb-8">
   <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
     <div class="flex items-center justify-between mb-4">
       <div class="w-11 h-11 bg-gray-900 rounded-xl flex items-center justify-center">
@@ -57,6 +57,227 @@
     </div>
     <p class="text-3xl font-bold text-gray-900">₹{{ total_revenue|floatformat:0 }}</p>
     <p class="text-sm text-gray-500 mt-1">Total Revenue</p>
+  </div>
+
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-11 h-11 bg-violet-600 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5V9l-5-5v16zM2 20h13V4H2v16zm3-6h6m-6 4h6m-6-8h6"/>
+        </svg>
+      </div>
+      <span class="text-xs text-gray-400 font-medium">USERS</span>
+    </div>
+    <p class="text-3xl font-bold text-gray-900">{{ total_users }}</p>
+    <p class="text-sm text-gray-500 mt-1">All Accounts ({{ total_customers }} customers)</p>
+  </div>
+</div>
+
+<!-- Fulfillment + Inventory metrics -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-11 h-11 bg-emerald-600 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+      <span class="text-xs text-gray-400 font-medium">SOLD</span>
+    </div>
+    <p class="text-3xl font-bold text-gray-900">{{ sold_orders }}</p>
+    <p class="text-sm text-gray-500 mt-1">Delivered Orders ({{ sold_units }} units)</p>
+  </div>
+
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-11 h-11 bg-red-600 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-12.728 12.728m0-12.728l12.728 12.728"/>
+        </svg>
+      </div>
+      <span class="text-xs text-gray-400 font-medium">RETURNED</span>
+    </div>
+    <p class="text-3xl font-bold text-gray-900">{{ returned_orders }}</p>
+    <p class="text-sm text-gray-500 mt-1">Returned Orders ({{ returned_units }} units)</p>
+  </div>
+
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-11 h-11 bg-cyan-600 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
+        </svg>
+      </div>
+      <span class="text-xs text-gray-400 font-medium">STOCK LEFT</span>
+    </div>
+    <p class="text-3xl font-bold text-gray-900">{{ stock_remaining }}</p>
+    <p class="text-sm text-gray-500 mt-1">Total Units In Inventory</p>
+  </div>
+
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-11 h-11 bg-orange-500 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M5.07 19h13.86c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.73 3z"/>
+        </svg>
+      </div>
+      <span class="text-xs text-gray-400 font-medium">LOW STOCK</span>
+    </div>
+    <p class="text-3xl font-bold text-gray-900">{{ low_stock_products }}</p>
+    <p class="text-sm text-gray-500 mt-1">Products With 1 to 5 Units</p>
+  </div>
+
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-11 h-11 bg-rose-500 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.73 3z"/>
+        </svg>
+      </div>
+      <span class="text-xs text-gray-400 font-medium">OUT OF STOCK</span>
+    </div>
+    <p class="text-3xl font-bold text-gray-900">{{ out_of_stock_products }}</p>
+    <p class="text-sm text-gray-500 mt-1">Products With Zero Quantity</p>
+  </div>
+</div>
+
+<!-- Registered users insight -->
+<div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8">
+  <div class="flex items-center justify-between mb-5">
+    <h3 class="text-base font-semibold text-gray-900">Registered User Insights</h3>
+    <p class="text-xs text-gray-400">Track who orders most and deserves coupon</p>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-100">
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">User</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Email</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Status</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Orders</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Spent</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Coupon</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for user in user_insights %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="py-3 font-medium text-gray-900">{{ user.username }}</td>
+          <td class="py-3 text-gray-600">{{ user.email|default:'-' }}</td>
+          <td class="py-3">
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold
+              {% if user.loyalty_status == 'Platinum' %}bg-slate-200 text-slate-800
+              {% elif user.loyalty_status == 'Gold' %}bg-amber-100 text-amber-700
+              {% elif user.loyalty_status == 'Silver' %}bg-gray-100 text-gray-700
+              {% else %}bg-orange-100 text-orange-700{% endif %}
+            ">{{ user.loyalty_status }}</span>
+          </td>
+          <td class="py-3 text-gray-800">{{ user.order_count }}</td>
+          <td class="py-3 font-semibold text-gray-900">₹{{ user.total_spend|floatformat:0 }}</td>
+          <td class="py-3">
+            {% if user.active_coupon_code %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+              Active: {{ user.active_coupon_code }}
+            </span>
+            {% elif user.order_count == 0 %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+              No orders yet
+            </span>
+            {% else %}
+            <form method="POST" action="{% url 'admin_create_loyalty_coupon' %}" class="flex items-center gap-2">
+              {% csrf_token %}
+              <input type="hidden" name="user_id" value="{{ user.id }}" />
+              <input
+                type="number"
+                name="discount_percent"
+                min="1"
+                max="90"
+                required
+                placeholder="%"
+                class="w-16 px-2 py-1.5 rounded-lg border border-gray-200 text-xs"
+              />
+              <button type="submit" class="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-700 transition-colors">
+                Create Coupon
+              </button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="py-6 text-center text-gray-400">No registered users found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Top shoppers -->
+<div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8">
+  <div class="flex items-center justify-between mb-5">
+    <h3 class="text-base font-semibold text-gray-900">Top Shoppers</h3>
+    <p class="text-xs text-gray-400">Best users for loyalty coupons</p>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-100">
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">User</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Email</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">User Status</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Total Orders</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Amount Shopped</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Coupon Action</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for shopper in top_shoppers %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="py-3 font-medium text-gray-900">{{ shopper.display_name }}</td>
+          <td class="py-3 text-gray-600">{{ shopper.display_email }}</td>
+          <td class="py-3">
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold
+              {% if shopper.loyalty_status == 'Platinum' %}bg-slate-200 text-slate-800
+              {% elif shopper.loyalty_status == 'Gold' %}bg-amber-100 text-amber-700
+              {% elif shopper.loyalty_status == 'Silver' %}bg-gray-100 text-gray-700
+              {% else %}bg-orange-100 text-orange-700{% endif %}
+            ">{{ shopper.loyalty_status }}</span>
+          </td>
+          <td class="py-3 text-gray-800">{{ shopper.order_count }}</td>
+          <td class="py-3 font-semibold text-gray-900">₹{{ shopper.total_spend|floatformat:0 }}</td>
+          <td class="py-3">
+            {% if shopper.active_coupon_code %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+              Active: {{ shopper.active_coupon_code }}
+            </span>
+            {% elif not shopper.user__id %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+              No linked account
+            </span>
+            {% else %}
+            <form method="POST" action="{% url 'admin_create_loyalty_coupon' %}" class="flex items-center gap-2">
+              {% csrf_token %}
+              <input type="hidden" name="user_id" value="{{ shopper.user__id }}" />
+              <input
+                type="number"
+                name="discount_percent"
+                min="1"
+                max="90"
+                required
+                placeholder="%"
+                class="w-16 px-2 py-1.5 rounded-lg border border-gray-200 text-xs"
+              />
+              <button type="submit" class="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-700 transition-colors">
+                Create Coupon
+              </button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="py-6 text-center text-gray-400">No linked user orders yet</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
 
@@ -132,6 +353,7 @@
               <span class="px-2.5 py-1 rounded-full text-xs font-medium
                 {% if order.status == 'pending' %}bg-amber-100 text-amber-700
                 {% elif order.status == 'delivered' %}bg-green-100 text-green-700
+                {% elif order.status == 'returned' %}bg-rose-100 text-rose-700
                 {% elif order.status == 'cancelled' %}bg-red-100 text-red-700
                 {% elif order.status == 'shipped' %}bg-blue-100 text-blue-700
                 {% else %}bg-gray-100 text-gray-600{% endif %}">

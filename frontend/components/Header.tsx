@@ -5,7 +5,6 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
-import CartSidebar from './CartSidebar';
 import ThemeToggle from './ThemeToggle';
 
 export default function Header() {
@@ -14,11 +13,8 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [user, setUser] = useState<{ email: string; firstName?: string } | null>(null);
+  const [user, setUser] = useState<{ id?: number; email: string; firstName?: string; first_name?: string } | null>(null);
   const { totalItems } = useCart();
-  const [cartOpen, setCartOpen] = useState(false);
-  const openCart = () => setCartOpen(true);
-  const closeCart = () => setCartOpen(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,6 +36,7 @@ export default function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem('excito_user');
+    window.dispatchEvent(new Event('excito-auth-changed'));
     setUser(null);
     setIsUserMenuOpen(false);
     router.push('/');
@@ -158,7 +155,7 @@ export default function Header() {
               <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer">
                 <i className="ri-heart-line text-gray-600 dark:text-gray-300 w-5 h-5 flex items-center justify-center"></i>
               </button>
-              <button onClick={openCart} className="relative p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer">
+              <button onClick={() => router.push('/cart')} className="relative p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors cursor-pointer">
                 <i className="ri-shopping-cart-line text-gray-600 dark:text-gray-300 w-5 h-5 flex items-center justify-center"></i>
                 {totalItems > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded-full">{totalItems}</span>}
               </button>
@@ -184,7 +181,7 @@ export default function Header() {
                       <>
                         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                            {user.firstName ? user.firstName : user.email.split('@')[0]}
+                            {user.firstName || user.first_name ? (user.firstName || user.first_name) : user.email.split('@')[0]}
                           </p>
                           <p className="text-xs text-gray-400 truncate">{user.email}</p>
                         </div>
@@ -273,8 +270,6 @@ export default function Header() {
         )}
       </div>
       </header>
-
-      <CartSidebar isOpen={cartOpen} onClose={closeCart} />
     </>
   );
 }

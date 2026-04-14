@@ -21,6 +21,7 @@
       <option value="processing" {% if status_filter == 'processing' %}selected{% endif %}>Processing</option>
       <option value="shipped" {% if status_filter == 'shipped' %}selected{% endif %}>Shipped</option>
       <option value="delivered" {% if status_filter == 'delivered' %}selected{% endif %}>Delivered</option>
+      <option value="returned" {% if status_filter == 'returned' %}selected{% endif %}>Returned</option>
       <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
     </select>
     <button type="submit" class="bg-gray-900 text-white text-sm px-5 py-2.5 rounded-xl hover:bg-gray-700 transition-colors">Filter</button>
@@ -37,6 +38,7 @@
         <tr>
           <th class="text-left text-xs text-gray-400 font-semibold px-6 py-4">ORDER</th>
           <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">CUSTOMER</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">USER ACCOUNT</th>
           <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">ITEMS</th>
           <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">AMOUNT</th>
           <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">PAYMENT</th>
@@ -56,6 +58,14 @@
             <p class="text-xs text-gray-400">{{ order.email }}</p>
           </td>
           <td class="px-4 py-4">
+            {% if order.user %}
+            <p class="font-medium text-gray-800">{{ order.user.username }}</p>
+            <p class="text-xs text-gray-400">{{ order.user.email }}</p>
+            {% else %}
+            <span class="text-xs text-gray-400">Guest / not linked</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-4">
             <span class="text-gray-700">{{ order.items.count }} item{{ order.items.count|pluralize }}</span>
           </td>
           <td class="px-4 py-4 font-semibold text-gray-900">₹{{ order.total_amount }}</td>
@@ -67,6 +77,7 @@
             <span class="px-3 py-1 rounded-full text-xs font-semibold capitalize
               {% if order.status == 'pending' %}bg-amber-100 text-amber-700
               {% elif order.status == 'delivered' %}bg-green-100 text-green-700
+              {% elif order.status == 'returned' %}bg-rose-100 text-rose-700
               {% elif order.status == 'cancelled' %}bg-red-100 text-red-700
               {% elif order.status == 'shipped' %}bg-blue-100 text-blue-700
               {% elif order.status == 'processing' %}bg-purple-100 text-purple-700
@@ -87,7 +98,7 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="8" class="px-6 py-16 text-center">
+          <td colspan="9" class="px-6 py-16 text-center">
             <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
             </svg>

@@ -50,7 +50,7 @@ export default function ProductGrid({ selectedCategory, selectedBrand, sortBy, p
 
   const filteredProducts = products.filter(p => {
     const catMatch = selectedCategory === 'all' || p.section === selectedCategory;
-    const brandMatch = selectedBrand === 'all' || p.brand === selectedBrand;
+    const brandMatch = selectedBrand === 'all' || (p.brand || '').toLowerCase() === selectedBrand.toLowerCase();
     const priceMatch = p.price >= priceRange[0] && p.price <= priceRange[1];
     return catMatch && brandMatch && priceMatch;
   });

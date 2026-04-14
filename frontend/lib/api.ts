@@ -36,7 +36,21 @@ export interface OrderData {
   state: string;
   postal_code: string;
   country: string;
+  coupon_code?: string;
   items: OrderItem[];
+}
+
+export interface ShippingConfig {
+  flat_shipping_fee: string;
+  free_shipping_threshold: string;
+}
+
+export interface AuthUser {
+  id: number;
+  username: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
 }
 
 const ENV_API_BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -84,8 +98,15 @@ export async function createOrder(data: OrderData) {
         body: JSON.stringify(data),
       });
       if (!res.ok) {
-        const err = await res.text();
-        throw new Error(err || 'Order creation failed');
+        let message = 'Order creation failed';
+        try {
+          const payload = await res.json();
+          message = payload.detail || payload.items || message;
+        } catch {
+          const err = await res.text();
+          message = err || message;
+        }
+        throw new Error(message);
       }
       return res.json();
     } catch (err) {
@@ -94,4 +115,188 @@ export async function createOrder(data: OrderData) {
   }
 
   throw lastError instanceof Error ? lastError : new Error('Order creation failed');
+}
+
+export async function signupWithPassword(input: {
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+}): Promise<{ detail: string; user: AuthUser }> {
+  const bases = getApiBases();
+  let lastError: unknown = null;
+
+  for (const base of bases) {
+    try {
+      const res = await fetch(`${base}/auth/signup/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) {
+        let message = 'Signup failed';
+        try {
+          const data = await res.json();
+          message = data.detail || message;
+        } catch {
+          const err = await res.text();
+          message = err || message;
+        }
+        throw new Error(message);
+      }
+      return res.json();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Signup failed');
+}
+
+export async function loginWithPassword(input: {
+  email: string;
+  password: string;
+}): Promise<{ detail: string; user: AuthUser }> {
+  const bases = getApiBases();
+  let lastError: unknown = null;
+
+  for (const base of bases) {
+    try {
+      const res = await fetch(`${base}/auth/login-password/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) {
+        let message = 'Login failed';
+        try {
+          const data = await res.json();
+          message = data.detail || message;
+        } catch {
+          const err = await res.text();
+          message = err || message;
+        }
+        throw new Error(message);
+      }
+      return res.json();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Login failed');
+}
+
+export async function fetchShippingConfig(): Promise<ShippingConfig> {
+  const bases = getApiBases();
+  let lastError: unknown = null;
+
+  for (const base of bases) {
+    try {
+      const res = await fetch(`${base}/shipping/config/`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to fetch shipping config');
+      return res.json();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Failed to fetch shipping config');
+}
+
+export async function validateCoupon(input: {
+  code: string;
+  email: string;
+  subtotal: number;
+}): Promise<{ valid: boolean; code: string; discount_percent: number; discount_amount: string }> {
+  const bases = getApiBases();
+  let lastError: unknown = null;
+
+  for (const base of bases) {
+    try {
+      const res = await fetch(`${base}/coupons/validate/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) {
+        let message = 'Coupon validation failed';
+        try {
+          const data = await res.json();
+          message = data.detail || message;
+        } catch {
+          const err = await res.text();
+          message = err || message;
+        }
+        throw new Error(message);
+      }
+      return res.json();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Coupon validation failed');
+}
+
+export async function requestEmailOtp(email: string) {
+  const bases = getApiBases();
+  let lastError: unknown = null;
+
+  for (const base of bases) {
+    try {
+      const res = await fetch(`${base}/auth/request-otp/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        let message = 'Failed to send OTP';
+        try {
+          const data = await res.json();
+          message = data.detail || message;
+        } catch {
+          const err = await res.text();
+          message = err || message;
+        }
+        throw new Error(message);
+      }
+      return res.json();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Failed to send OTP');
+}
+
+export async function verifyEmailOtp(email: string, otp: string): Promise<{ detail: string; user: AuthUser }> {
+  const bases = getApiBases();
+  let lastError: unknown = null;
+
+  for (const base of bases) {
+    try {
+      const res = await fetch(`${base}/auth/verify-otp/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp }),
+      });
+      if (!res.ok) {
+        let message = 'OTP verification failed';
+        try {
+          const data = await res.json();
+          message = data.detail || message;
+        } catch {
+          const err = await res.text();
+          message = err || message;
+        }
+        throw new Error(message);
+      }
+      return res.json();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('OTP verification failed');
 }

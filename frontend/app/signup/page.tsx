@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { signupWithPassword } from '@/lib/api';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -49,11 +50,25 @@ export default function SignupPage() {
 
     setLoading(true);
     setError('');
-    await new Promise(r => setTimeout(r, 900));
-
-    localStorage.setItem('excito_user', JSON.stringify({ email: form.email, firstName: form.firstName, lastName: form.lastName }));
-    router.push('/');
-    setLoading(false);
+    try {
+      const data = await signupWithPassword({
+        first_name: form.firstName,
+        last_name: form.lastName,
+        email: form.email,
+        password: form.password,
+      });
+      localStorage.setItem('excito_user', JSON.stringify({
+        id: data.user.id,
+        email: data.user.email,
+        firstName: data.user.first_name || form.firstName,
+      }));
+      window.dispatchEvent(new Event('excito-auth-changed'));
+      router.push('/');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Signup failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

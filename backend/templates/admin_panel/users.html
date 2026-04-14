@@ -1,0 +1,112 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Users - Excito Admin{% endblock %}
+{% block page_title %}Registered Users{% endblock %}
+{% block page_subtitle %}All registered users and coupon eligibility{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+    <div>
+      <h3 class="text-base font-semibold text-gray-900">User Directory</h3>
+      <p class="text-sm text-gray-500 mt-1">Total Registered Users: {{ total_users }}</p>
+    </div>
+    <div class="w-full lg:w-auto flex flex-col sm:flex-row gap-3">
+      <a href="{% url 'admin_user_add' %}" class="px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700 transition-colors text-center">
+        Add User
+      </a>
+      <form method="GET" class="w-full">
+        <div class="flex items-center gap-3">
+        <input type="hidden" name="no_password" value="{% if no_password_only %}1{% endif %}" />
+        <input
+          type="text"
+          name="search"
+          value="{{ search }}"
+          placeholder="Search by username, email, name"
+          class="w-full lg:w-80 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+        />
+        <button type="submit" class="px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700 transition-colors">
+          Search
+        </button>
+        </div>
+      </form>
+      <a href="{% url 'admin_users' %}{% if search %}?search={{ search }}&no_password={% if no_password_only %}0{% else %}1{% endif %}{% else %}?no_password={% if no_password_only %}0{% else %}1{% endif %}{% endif %}"
+         class="px-4 py-2.5 rounded-xl border text-sm font-semibold transition-colors {% if no_password_only %}border-amber-300 bg-amber-50 text-amber-700{% else %}border-gray-200 text-gray-700 hover:bg-gray-50{% endif %}">
+        {% if no_password_only %}Showing: No Password{% else %}Only Users Without Password{% endif %}
+      </a>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-100">
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Username</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Role</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Email</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Phone</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Password</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Status</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Orders</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Spent</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for u in users %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="py-3">
+            <p class="font-semibold text-gray-900">{{ u.username }}</p>
+            <p class="text-xs text-gray-500">{{ u.full_name|default:'-' }}</p>
+          </td>
+          <td class="py-3">
+            {% if u.is_staff %}
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">Staff</span>
+            {% else %}
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">Customer</span>
+            {% endif %}
+          </td>
+          <td class="py-3 text-gray-700">{{ u.email|default:'-' }}</td>
+          <td class="py-3 text-gray-700">{{ u.phone|default:'-' }}</td>
+          <td class="py-3">
+            {% if u.has_password %}
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Set</span>
+            {% else %}
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Not Set</span>
+            {% endif %}
+          </td>
+          <td class="py-3">
+            {% if u.is_active %}
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Active</span>
+            {% else %}
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="py-3 text-gray-800">{{ u.order_count }}</td>
+          <td class="py-3 font-semibold text-gray-900">₹{{ u.total_spend|floatformat:0 }}</td>
+          <td class="py-3">
+            <div class="mt-2 flex items-center gap-2">
+              <a href="{% url 'admin_user_view' u.id %}" class="px-2.5 py-1 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition-colors">
+                View
+              </a>
+              <a href="{% url 'admin_user_edit' u.id %}" class="px-2.5 py-1 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition-colors">
+                Edit
+              </a>
+              <form method="POST" action="{% url 'admin_user_delete' u.id %}" onsubmit="return confirm('Delete this user?');">
+                {% csrf_token %}
+                <button type="submit" class="px-2.5 py-1 rounded-lg border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 transition-colors">
+                  Delete
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" class="py-8 text-center text-gray-400">No registered users found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -115,7 +115,7 @@ export default function FilterSidebar({
           <input
             type="range"
             min="0"
-            max="500"
+            max="10000"
             value={priceRange[1]}
             onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
             className="w-full cursor-pointer"
@@ -127,7 +127,7 @@ export default function FilterSidebar({
               onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
               className="w-full px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-xl text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
               min="0"
-              max="500"
+              max="10000"
             />
             <input
               type="number"
@@ -135,7 +135,7 @@ export default function FilterSidebar({
               onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
               className="w-full px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-xl text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
               min="0"
-              max="500"
+              max="10000"
             />
           </div>
         </div>

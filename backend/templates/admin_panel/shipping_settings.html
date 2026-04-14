@@ -1,0 +1,46 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Shipping Settings - Excito Admin{% endblock %}
+{% block page_title %}Shipping Settings{% endblock %}
+{% block page_subtitle %}Control shipping fee and free-shipping threshold{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+  <form method="POST" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-5">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Flat Shipping Fee (INR)</label>
+      <input
+        type="number"
+        step="0.01"
+        min="0"
+        name="flat_shipping_fee"
+        value="{{ shipping.flat_shipping_fee }}"
+        required
+        class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500"
+      />
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Free Shipping Threshold (INR)</label>
+      <input
+        type="number"
+        step="0.01"
+        min="0"
+        name="free_shipping_threshold"
+        value="{{ shipping.free_shipping_threshold }}"
+        required
+        class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500"
+      />
+    </div>
+
+    <div class="pt-2 border-t border-gray-100 text-xs text-gray-500">
+      Last updated: {{ shipping.updated_at|date:'d M Y, H:i' }}
+    </div>
+
+    <button type="submit" class="bg-gray-900 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-700 transition-colors">
+      Save Shipping Settings
+    </button>
+  </form>
+</div>
+{% endblock %}

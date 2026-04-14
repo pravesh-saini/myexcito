@@ -1,0 +1,131 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Stock — Excito Admin{% endblock %}
+{% block page_title %}Stock{% endblock %}
+{% block page_subtitle %}Track remaining quantity for each product{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <p class="text-xs text-gray-400 font-medium">TOTAL STOCK UNITS</p>
+    <p class="text-3xl font-bold text-gray-900 mt-2">{{ total_stock_units }}</p>
+  </div>
+  <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <p class="text-xs text-gray-400 font-medium">LOW STOCK (1-5)</p>
+    <p class="text-3xl font-bold text-orange-600 mt-2">{{ low_stock_products }}</p>
+  </div>
+  <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <p class="text-xs text-gray-400 font-medium">OUT OF STOCK</p>
+    <p class="text-3xl font-bold text-red-600 mt-2">{{ out_of_stock_products }}</p>
+  </div>
+</div>
+
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+  <form method="GET" class="flex items-center gap-3 flex-wrap">
+    <div class="relative">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <input type="text" name="search" value="{{ search }}" placeholder="Search by product or brand..."
+        class="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-gray-400 w-64" />
+    </div>
+    <select name="category" class="border border-gray-200 rounded-xl text-sm py-2.5 px-4 bg-white focus:outline-none cursor-pointer">
+      <option value="">All Categories</option>
+      <option value="men" {% if category == 'men' %}selected{% endif %}>Men</option>
+      <option value="women" {% if category == 'women' %}selected{% endif %}>Women</option>
+      <option value="kids" {% if category == 'kids' %}selected{% endif %}>Kids</option>
+      <option value="sale" {% if category == 'sale' %}selected{% endif %}>Sale</option>
+    </select>
+    <button type="submit" class="bg-gray-900 text-white text-sm px-5 py-2.5 rounded-xl hover:bg-gray-700 transition-colors">Filter</button>
+    {% if search or category %}
+    <a href="{% url 'admin_stock' %}" class="text-sm text-gray-500 hover:text-gray-800">Clear</a>
+    {% endif %}
+  </form>
+
+  <a href="{% url 'admin_stock_history' %}" class="inline-flex items-center gap-2 border border-gray-200 text-gray-700 text-sm px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <span>View Stock History</span>
+  </a>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b border-gray-100">
+        <tr>
+          <th class="text-left text-xs text-gray-400 font-semibold px-6 py-4">PRODUCT</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">CATEGORY</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">PRICE</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">STOCK LEFT</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">UPDATE STOCK</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-6 py-4">DETAILS</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for product in products %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-6 py-4">
+            <div class="flex items-center space-x-4">
+              {% if product.image %}
+              <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-12 h-12 rounded-xl object-cover bg-gray-100 flex-shrink-0" />
+              {% else %}
+              <div class="w-12 h-12 rounded-xl bg-gray-100"></div>
+              {% endif %}
+              <div>
+                <p class="font-semibold text-gray-900">{{ product.name }}</p>
+                <p class="text-xs text-gray-400">{{ product.brand|default:'-' }}</p>
+              </div>
+            </div>
+          </td>
+          <td class="px-4 py-4">
+            <span class="px-2.5 py-1 rounded-full text-xs font-medium capitalize bg-gray-100 text-gray-700">{{ product.category }}</span>
+          </td>
+          <td class="px-4 py-4 font-semibold text-gray-900">₹{{ product.price }}</td>
+          <td class="px-4 py-4">
+            {% if product.stock_count == 0 %}
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Out of stock</span>
+            {% elif product.stock_count <= 5 %}
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">{{ product.stock_count }} left</span>
+            {% else %}
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">{{ product.stock_count }} left</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-4">
+            <div class="flex items-center gap-2">
+              <form method="POST" class="flex items-center gap-2">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}" />
+                <input type="hidden" name="action" value="update_stock" />
+                <input type="number" name="stock_count" min="0" value="{{ product.stock_count }}"
+                  class="w-24 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-gray-400" />
+                <button type="submit"
+                  class="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-700 transition-colors">Save</button>
+              </form>
+              <form method="POST" onsubmit="return confirm('Mark {{ product.name }} as out of stock?');">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}" />
+                <input type="hidden" name="action" value="mark_out_of_stock" />
+                <button type="submit"
+                  class="px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-700 text-xs font-semibold hover:bg-red-100 transition-colors">Out of Stock</button>
+              </form>
+            </div>
+          </td>
+          <td class="px-6 py-4 text-gray-600">
+            <p class="text-xs">Section: {{ product.section|default:'-' }}</p>
+            <p class="text-xs">Sizes: {{ product.sizes|length }}</p>
+            <p class="text-xs">Colors: {{ product.colors|length }}</p>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="px-6 py-16 text-center text-gray-400">No products found</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

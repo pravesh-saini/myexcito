@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   },
   allowedDevOrigins: ["127.0.0.1", "localhost"],
   outputFileTracingRoot: __dirname,
-  output: "export",
+  output: process.env.NEXT_EXPORT === "1" ? "export" : undefined,
   // NOTE: For static export output in `out/`, serve the folder (e.g. `npm run serve:out`)
   // so `/_next/...` assets resolve correctly.
   images: {

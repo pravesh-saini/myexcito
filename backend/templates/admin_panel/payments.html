@@ -1,0 +1,86 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Payments — Excito Admin{% endblock %}
+{% block page_title %}Payments{% endblock %}
+{% block page_subtitle %}Track payment method and collection details{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <p class="text-xs text-gray-400 font-medium">COD</p>
+    <p class="text-lg font-semibold text-gray-900 mt-2">{{ cod_summary.total_orders|default:0 }} orders</p>
+    <p class="text-sm text-gray-500">₹{{ cod_summary.total_amount|default:0|floatformat:0 }}</p>
+  </div>
+  <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <p class="text-xs text-gray-400 font-medium">UPI</p>
+    <p class="text-lg font-semibold text-gray-900 mt-2">{{ upi_summary.total_orders|default:0 }} orders</p>
+    <p class="text-sm text-gray-500">₹{{ upi_summary.total_amount|default:0|floatformat:0 }}</p>
+  </div>
+  <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <p class="text-xs text-gray-400 font-medium">CARD</p>
+    <p class="text-lg font-semibold text-gray-900 mt-2">{{ card_summary.total_orders|default:0 }} orders</p>
+    <p class="text-sm text-gray-500">₹{{ card_summary.total_amount|default:0|floatformat:0 }}</p>
+  </div>
+</div>
+
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+  <form method="GET" class="flex items-center gap-3 flex-wrap">
+    <div class="relative">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <input type="text" name="search" value="{{ search }}" placeholder="Search by name or email..."
+        class="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-gray-400 w-64" />
+    </div>
+    <select name="payment_mode" class="border border-gray-200 rounded-xl text-sm py-2.5 px-4 bg-white focus:outline-none cursor-pointer">
+      <option value="">All Payments</option>
+      <option value="cod" {% if payment_mode == 'cod' %}selected{% endif %}>COD</option>
+      <option value="upi" {% if payment_mode == 'upi' %}selected{% endif %}>UPI</option>
+      <option value="card" {% if payment_mode == 'card' %}selected{% endif %}>Card</option>
+    </select>
+    <button type="submit" class="bg-gray-900 text-white text-sm px-5 py-2.5 rounded-xl hover:bg-gray-700 transition-colors">Filter</button>
+    {% if search or payment_mode %}
+    <a href="{% url 'admin_payments' %}" class="text-sm text-gray-500 hover:text-gray-800">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b border-gray-100">
+        <tr>
+          <th class="text-left text-xs text-gray-400 font-semibold px-6 py-4">ORDER</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">CUSTOMER</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">PAYMENT MODE</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">AMOUNT</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">ORDER STATUS</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-6 py-4">DATE</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for order in orders %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-6 py-4">
+            <a href="{% url 'admin_order_detail' order.pk %}" class="font-bold text-gray-900 hover:text-blue-600">#{{ order.id }}</a>
+          </td>
+          <td class="px-4 py-4">
+            <p class="font-medium text-gray-800">{{ order.first_name }} {{ order.last_name }}</p>
+            <p class="text-xs text-gray-400">{{ order.email }}</p>
+          </td>
+          <td class="px-4 py-4 uppercase text-gray-700">{{ order.payment_mode|default:'cod' }}</td>
+          <td class="px-4 py-4 font-semibold text-gray-900">₹{{ order.total_amount }}</td>
+          <td class="px-4 py-4 text-gray-700 capitalize">{{ order.status }}</td>
+          <td class="px-6 py-4 text-gray-500">{{ order.created_at|date:'d M Y H:i' }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="px-6 py-16 text-center text-gray-400">No payment records found</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

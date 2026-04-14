@@ -1,0 +1,97 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useCart } from '@/context/CartContext';
+import { fetchShippingConfig } from '@/lib/api';
+
+export default function CartPage() {
+  const { items, removeItem, clearCart, totalItems } = useCart();
+  const [flatShippingFee, setFlatShippingFee] = useState(79);
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(999);
+
+  useEffect(() => {
+    fetchShippingConfig()
+      .then((cfg) => {
+        setFlatShippingFee(Number(cfg.flat_shipping_fee));
+        setFreeShippingThreshold(Number(cfg.free_shipping_threshold));
+      })
+      .catch(() => {
+        setFlatShippingFee(79);
+        setFreeShippingThreshold(999);
+      });
+  }, []);
+
+  const subtotal = items.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
+  const shippingFee = subtotal >= freeShippingThreshold ? 0 : flatShippingFee;
+  const totalPayable = subtotal + shippingFee;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-950 px-4 py-10">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-gray-900 dark:text-gray-100">Your Cart</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{totalItems} item{totalItems === 1 ? '' : 's'}</p>
+
+        {items.length === 0 ? (
+          <div className="ui-card p-8 text-center mt-6">
+            <i className="ri-shopping-cart-line text-4xl text-gray-300 mb-3 block" />
+            <p className="text-gray-800 dark:text-gray-100 font-semibold">Your cart is empty</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Add products and then place your order.</p>
+            <Link href="/" className="ui-btn-primary inline-block mt-4">Continue Shopping</Link>
+          </div>
+        ) : (
+          <div className="mt-7 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div className="lg:col-span-2 ui-card p-6 sm:p-8 space-y-4">
+              {items.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 pb-4">
+                  {item.product.image_url ? (
+                    <img src={item.product.image_url} alt={item.product.name} className="w-16 h-16 object-cover rounded-xl" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+                      <i className="ri-image-line text-xl text-gray-300" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{item.product.name}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                      Qty {item.quantity} · {item.size ? `Size ${item.size}` : 'Size —'} · {item.color ? item.color : 'Color —'}
+                    </p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mt-1">₹{Number(item.product.price).toLocaleString()}</p>
+                  </div>
+                  <button onClick={() => removeItem(idx)} className="text-sm text-red-600 hover:text-red-700 font-semibold">Remove</button>
+                </div>
+              ))}
+            </div>
+
+            <div className="ui-card p-6 sm:p-7 lg:sticky lg:top-24 h-fit">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Summary</h2>
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
+                  <span className="font-bold text-gray-900 dark:text-gray-100">₹{subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Shipping Fee</span>
+                  {shippingFee === 0 ? (
+                    <span className="font-semibold text-emerald-600">Free</span>
+                  ) : (
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">₹{shippingFee.toLocaleString()}</span>
+                  )}
+                </div>
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between text-base">
+                  <span className="font-bold text-gray-900 dark:text-gray-100">Total Payable</span>
+                  <span className="font-black text-gray-900 dark:text-gray-100">₹{totalPayable.toLocaleString()}</span>
+                </div>
+                {shippingFee > 0 && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Add ₹{Math.max(0, freeShippingThreshold - subtotal).toLocaleString()} more for free shipping.</p>
+                )}
+              </div>
+              <Link href="/checkout" className="ui-btn-primary w-full mt-5">Place Order</Link>
+              <button onClick={clearCart} className="ui-btn-secondary w-full mt-2 text-red-600">Clear Cart</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

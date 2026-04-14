@@ -1,0 +1,74 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Stock History — Excito Admin{% endblock %}
+{% block page_title %}Stock History{% endblock %}
+{% block page_subtitle %}Audit trail for every stock update{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+  <form method="GET" class="flex items-center gap-3 flex-wrap">
+    <div class="relative">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <input type="text" name="search" value="{{ search }}" placeholder="Search by product, user, or reason..."
+        class="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-gray-400 w-72" />
+    </div>
+    <button type="submit" class="bg-gray-900 text-white text-sm px-5 py-2.5 rounded-xl hover:bg-gray-700 transition-colors">Search</button>
+    {% if search %}
+    <a href="{% url 'admin_stock_history' %}" class="text-sm text-gray-500 hover:text-gray-800">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b border-gray-100">
+        <tr>
+          <th class="text-left text-xs text-gray-400 font-semibold px-6 py-4">TIME</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">PRODUCT</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">CHANGED BY</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">OLD STOCK</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-4 py-4">NEW STOCK</th>
+          <th class="text-left text-xs text-gray-400 font-semibold px-6 py-4">REASON</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for log in logs %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-6 py-4 text-gray-600">{{ log.created_at|date:'d M Y, H:i:s' }}</td>
+          <td class="px-4 py-4">
+            <p class="font-semibold text-gray-900">{{ log.product.name }}</p>
+            <p class="text-xs text-gray-400">{{ log.product.category|capfirst }}{% if log.product.brand %} • {{ log.product.brand }}{% endif %}</p>
+          </td>
+          <td class="px-4 py-4">
+            {% if log.changed_by %}
+            <span class="text-gray-800 font-medium">{{ log.changed_by.username }}</span>
+            {% else %}
+            <span class="text-gray-500">System</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-4">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">{{ log.old_stock }}</span>
+          </td>
+          <td class="px-4 py-4">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
+              {% if log.new_stock == 0 %}bg-red-100 text-red-700
+              {% elif log.new_stock <= 5 %}bg-orange-100 text-orange-700
+              {% else %}bg-emerald-100 text-emerald-700{% endif %}
+            ">{{ log.new_stock }}</span>
+          </td>
+          <td class="px-6 py-4 text-gray-600">{{ log.reason|default:'-' }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="px-6 py-16 text-center text-gray-400">No stock history yet</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
