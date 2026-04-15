@@ -36,8 +36,8 @@
               </div>
               <div>
                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Brand</label>
-                <input type="text" name="brand" value="{{ product.brand|default:'' }}"
-                  class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500" />
+                <input type="text" value="Excito" disabled
+                  class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 text-gray-500 cursor-not-allowed" />
               </div>
             </div>
 
@@ -111,8 +111,13 @@
             </div>
             <div>
               <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Colors (comma separated)</label>
-              <input type="text" name="colors" value="{{ product.colors|join:', '|default:'' }}" placeholder="Black, White, Red"
+              <input type="text" id="colorsInput" name="colors" value="{{ product.colors|join:', '|default:'' }}" placeholder="Black, White, Red"
                 class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500" />
+              <p class="text-xs text-gray-400 mt-1">Upload optional color-specific images below to show the right image when a user selects a color.</p>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Color-wise Images (optional)</label>
+              <div id="colorImageInputs" class="space-y-3"></div>
             </div>
           </div>
         </div>
@@ -200,6 +205,12 @@
 
 {% block extra_scripts %}
 <script>
+const existingColorImages = {{ color_image_urls_json|default:'{}'|safe }};
+
+function normalizeColorKey(value) {
+  return String(value || '').trim().toLowerCase().replace(/\s+/g, '-');
+}
+
 function previewImage(input) {
   if (input.files && input.files[0]) {
     const reader = new FileReader();
@@ -211,5 +222,99 @@ function previewImage(input) {
     reader.readAsDataURL(input.files[0]);
   }
 }
+
+function renderColorImageInputs() {
+  const colorsInput = document.getElementById('colorsInput');
+  const container = document.getElementById('colorImageInputs');
+  if (!colorsInput || !container) return;
+
+  const colors = colorsInput.value
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (!colors.length) {
+    container.innerHTML = '<p class="text-xs text-gray-400">Add colors above to upload color-specific images.</p>';
+    return;
+  }
+
+  container.innerHTML = '';
+  colors.forEach((color, index) => {
+    const row = document.createElement('div');
+    row.className = 'rounded-xl border border-gray-200 p-3 bg-gray-50/60';
+
+    const header = document.createElement('div');
+    header.className = 'flex items-center justify-between gap-3 mb-2';
+
+    const title = document.createElement('p');
+    title.className = 'text-sm font-medium text-gray-700';
+    title.textContent = color;
+
+    const badge = document.createElement('span');
+    badge.className = 'text-[11px] text-gray-500';
+    badge.textContent = 'Optional';
+
+    header.appendChild(title);
+    header.appendChild(badge);
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.name = `color_image_${index}`;
+    input.accept = 'image/*';
+    input.className = 'block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border file:border-gray-200 file:bg-white file:px-3 file:py-1.5 file:text-sm file:text-gray-700 hover:file:bg-gray-100';
+
+    const previewWrap = document.createElement('div');
+    previewWrap.className = 'mt-2';
+
+    const existingUrl = existingColorImages[normalizeColorKey(color)];
+    if (existingUrl) {
+      const img = document.createElement('img');
+      img.src = existingUrl;
+      img.alt = `${color} preview`;
+      img.className = 'h-20 w-20 rounded-lg object-cover border border-gray-200';
+
+      const caption = document.createElement('p');
+      caption.className = 'text-[11px] text-gray-400 mt-1';
+      caption.textContent = 'Current image';
+
+      previewWrap.appendChild(img);
+      previewWrap.appendChild(caption);
+    }
+
+    input.addEventListener('change', () => {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      const fileReader = new FileReader();
+      fileReader.onload = (event) => {
+        previewWrap.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = event.target.result;
+        img.alt = `${color} preview`;
+        img.className = 'h-20 w-20 rounded-lg object-cover border border-gray-200';
+
+        const caption = document.createElement('p');
+        caption.className = 'text-[11px] text-gray-400 mt-1';
+        caption.textContent = 'New image selected';
+
+        previewWrap.appendChild(img);
+        previewWrap.appendChild(caption);
+      };
+      fileReader.readAsDataURL(file);
+    });
+
+    row.appendChild(header);
+    row.appendChild(input);
+    row.appendChild(previewWrap);
+    container.appendChild(row);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const colorsInput = document.getElementById('colorsInput');
+  if (colorsInput) {
+    colorsInput.addEventListener('input', renderColorImageInputs);
+  }
+  renderColorImageInputs();
+});
 </script>
 {% endblock %}

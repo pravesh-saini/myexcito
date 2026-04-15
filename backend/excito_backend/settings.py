@@ -87,6 +87,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Frontend (Next.js) base URL used by templates (e.g., admin panel "View Store")
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://127.0.0.1:3000').rstrip('/')
 
+# Trust local dev and ngrok origins for browser form POSTs.
+CSRF_TRUSTED_ORIGINS = [
+    FRONTEND_URL,
+    'https://*.ngrok-free.dev',
+    'https://*.ngrok-free.app',
+]
+
 # CORS
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -101,3 +108,24 @@ REST_FRAMEWORK = {
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@excito.local')
 OTP_EXPIRY_MINUTES = int(os.environ.get('OTP_EXPIRY_MINUTES', '10'))
+
+# Abuse protection: fixed-window API rate limits
+RATE_LIMIT_LOGIN_IP = int(os.environ.get('RATE_LIMIT_LOGIN_IP', '10'))
+RATE_LIMIT_LOGIN_EMAIL = int(os.environ.get('RATE_LIMIT_LOGIN_EMAIL', '5'))
+RATE_LIMIT_LOGIN_WINDOW_SECONDS = int(os.environ.get('RATE_LIMIT_LOGIN_WINDOW_SECONDS', '300'))
+
+RATE_LIMIT_OTP_REQUEST_IP = int(os.environ.get('RATE_LIMIT_OTP_REQUEST_IP', '8'))
+RATE_LIMIT_OTP_REQUEST_EMAIL = int(os.environ.get('RATE_LIMIT_OTP_REQUEST_EMAIL', '3'))
+RATE_LIMIT_OTP_REQUEST_WINDOW_SECONDS = int(os.environ.get('RATE_LIMIT_OTP_REQUEST_WINDOW_SECONDS', '600'))
+
+RATE_LIMIT_OTP_VERIFY_IP = int(os.environ.get('RATE_LIMIT_OTP_VERIFY_IP', '15'))
+RATE_LIMIT_OTP_VERIFY_EMAIL = int(os.environ.get('RATE_LIMIT_OTP_VERIFY_EMAIL', '8'))
+RATE_LIMIT_OTP_VERIFY_WINDOW_SECONDS = int(os.environ.get('RATE_LIMIT_OTP_VERIFY_WINDOW_SECONDS', '600'))
+
+RATE_LIMIT_COUPON_VALIDATE_IP = int(os.environ.get('RATE_LIMIT_COUPON_VALIDATE_IP', '30'))
+RATE_LIMIT_COUPON_VALIDATE_EMAIL = int(os.environ.get('RATE_LIMIT_COUPON_VALIDATE_EMAIL', '10'))
+RATE_LIMIT_COUPON_VALIDATE_WINDOW_SECONDS = int(os.environ.get('RATE_LIMIT_COUPON_VALIDATE_WINDOW_SECONDS', '300'))
+
+# Payment webhook verification
+PAYMENT_WEBHOOK_SECRET = os.environ.get('PAYMENT_WEBHOOK_SECRET', 'dev-webhook-secret-change')
+PAYMENT_WEBHOOK_TOLERANCE_SECONDS = int(os.environ.get('PAYMENT_WEBHOOK_TOLERANCE_SECONDS', '300'))

@@ -7,6 +7,7 @@
 	html {
 		text-rendering: optimizeLegibility;
 		-webkit-text-size-adjust: 100%;
+		scroll-behavior: smooth;
 	}
 
 	body {
@@ -15,6 +16,49 @@
 
 	::selection {
 		@apply bg-gray-900 text-white;
+	}
+	
+	/* Smooth page transitions */
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+	
+	@keyframes slideInUp {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+	
+	@keyframes slideInDown {
+		from {
+			opacity: 0;
+			transform: translateY(-10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+	
+	@keyframes scaleIn {
+		from {
+			opacity: 0;
+			transform: scale(0.95);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
 	}
 }
 
@@ -54,6 +98,34 @@
 	.ui-btn-secondary {
 		@apply ui-btn bg-white text-gray-900 border border-gray-200 hover:bg-gray-50;
 		@apply dark:bg-gray-950 dark:text-gray-100 dark:border-gray-800 dark:hover:bg-gray-900;
+	}
+
+	.auth-shell {
+		background-image:
+			radial-gradient(circle at 14% 12%, rgba(56, 189, 248, 0.08), transparent 28%),
+			radial-gradient(circle at 82% 24%, rgba(244, 63, 94, 0.08), transparent 30%),
+			linear-gradient(180deg, #f8fafc 0%, #eef2ff 52%, #ffffff 100%);
+		@apply dark:bg-gray-950;
+	}
+
+	.auth-input {
+		@apply w-full rounded-xl border border-gray-200 bg-white/95 px-4 py-3 text-sm text-gray-900;
+		@apply placeholder:text-gray-400 backdrop-blur-sm;
+		@apply focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-500;
+		@apply dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100 dark:placeholder:text-gray-500;
+		@apply dark:focus:ring-white/10 dark:focus:border-gray-300;
+	}
+
+	.auth-btn-primary {
+		@apply w-full rounded-xl bg-gray-900 py-3 text-sm font-semibold text-white;
+		@apply transition-colors hover:bg-gray-700 active:bg-black disabled:opacity-60 disabled:cursor-not-allowed;
+		@apply dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100;
+	}
+
+	.auth-btn-social {
+		@apply flex items-center justify-center space-x-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium;
+		@apply text-gray-700 transition-colors hover:bg-gray-50;
+		@apply dark:border-gray-800 dark:text-gray-200 dark:hover:bg-gray-900;
 	}
 }
 
@@ -138,4 +210,57 @@
 	.animate-slide-in-left {
 		animation: none;
 	}
+	
+	html {
+		scroll-behavior: auto;
+	}
 }
+
+/* Smooth transition utilities */
+@layer utilities {
+	.smooth-transitions {
+		@apply transition-all duration-300 ease-out;
+	}
+	
+	.smooth-colors {
+		@apply transition-colors duration-300 ease-out;
+	}
+	
+	.smooth-transform {
+		@apply transition-transform duration-300 ease-out;
+	}
+	
+	.smooth-opacity {
+		@apply transition-opacity duration-300 ease-out;
+	}
+	
+	/* Fast smooth transitions */
+	.fast-transition {
+		@apply transition-all duration-150 ease-out;
+	}
+	
+	/* Hover scale effect with smooth transition */
+	.hover-scale {
+		@apply transition-transform duration-200 hover:scale-105;
+	}
+	
+	.hover-lift {
+		@apply transition-all duration-200 hover:shadow-lg hover:-translate-y-1;
+	}
+	
+	/* Smooth pagination */
+	.page-transition {
+		@apply animate-in fade-in duration-300;
+	}
+	
+	/* Responsive grid with smooth transitions */
+	.responsive-grid {
+		@apply grid gap-4 transition-all duration-300;
+	}
+	
+	/* Smooth scrolling area */
+	.smooth-scroll {
+		@apply scroll-smooth;
+	}
+}
+

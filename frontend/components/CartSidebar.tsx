@@ -2,6 +2,7 @@
 
 import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
+import { getColorImageUrl } from '@/lib/productImages';
 
 export default function CartSidebar({
   isOpen,
@@ -10,7 +11,7 @@ export default function CartSidebar({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const { items, removeItem, clearCart, totalItems } = useCart();
+  const { items, updateItemQuantity, removeItem, clearCart, totalItems } = useCart();
 
   const subtotal = items.reduce(
     (sum, item) => sum + Number(item.product.price) * item.quantity,
@@ -23,7 +24,7 @@ export default function CartSidebar({
       aria-hidden={!isOpen}
     >
       <div
-        className={`absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity ${
+        className={`absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300 ${
           isOpen ? 'opacity-100 animate-fade-in' : 'opacity-0'
         }`}
         onClick={onClose}
@@ -32,12 +33,12 @@ export default function CartSidebar({
       <div
         role="dialog"
         aria-label="Shopping cart"
-        className={`absolute top-0 right-0 h-full w-[92vw] max-w-[380px] sm:w-[380px] bg-white dark:bg-gray-950 shadow-2xl transform transition-transform duration-300 border-l border-gray-200/60 dark:border-gray-800 ${
+        className={`absolute top-0 right-0 h-full w-[92vw] max-w-[380px] sm:w-[380px] bg-white dark:bg-gray-950 shadow-2xl transform transition-transform duration-300 ease-out border-l border-gray-200/60 dark:border-gray-800 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={`p-5 sm:p-6 flex flex-col h-full ${isOpen ? 'animate-slide-in-right' : ''}`}>
+        <div className={`p-5 sm:p-6 flex flex-col h-full smooth-transitions ${isOpen ? 'animate-slide-in-right' : ''}`}>
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Your Cart</h2>
@@ -61,40 +62,69 @@ export default function CartSidebar({
                 <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Add items to checkout faster.</p>
               </div>
             ) : (
-              items.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-3 mb-4 animate-card-in"
-                  style={{ animationDelay: `${Math.min(idx, 12) * 45}ms` }}
-                >
-                  {item.product.image_url ? (
-                    <img
-                      src={item.product.image_url}
-                      alt={item.product.name}
-                      className="w-16 h-16 object-cover rounded-xl"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-xl bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-                      <i className="ri-image-line text-xl text-gray-300" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{item.product.name}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                      {item.size ? `Size: ${item.size}` : 'Size: —'} · {item.color ? `Color: ${item.color}` : 'Color: —'}
-                    </p>
-                    <div className="flex items-center justify-between mt-1">
-                      <p className="text-sm font-bold text-gray-900 dark:text-gray-100">₹{Number(item.product.price).toLocaleString()}</p>
-                      <button
-                        onClick={() => removeItem(idx)}
-                        className="text-sm text-red-600 hover:text-red-700 font-semibold"
-                      >
-                        Remove
-                      </button>
+              items.map((item, idx) => {
+                const itemImageUrl = getColorImageUrl(item.product, item.color);
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-3 mb-4 animate-card-in"
+                    style={{ animationDelay: `${Math.min(idx, 12) * 45}ms` }}
+                  >
+                    {itemImageUrl ? (
+                      <img
+                        src={itemImageUrl}
+                        alt={item.product.name}
+                        className="w-16 h-16 object-cover rounded-xl"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+                        <i className="ri-image-line text-xl text-gray-300" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{item.product.name}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                        {item.size ? `Size: ${item.size}` : 'Size: —'} · {item.color ? `Color: ${item.color}` : 'Color: —'}
+                      </p>
+                      <div className="mt-2 inline-flex items-center overflow-hidden rounded-lg border border-gray-300 dark:border-gray-700">
+                        <button
+                          type="button"
+                          onClick={() => updateItemQuantity(idx, item.quantity - 1)}
+                          className="px-2 py-0.5 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-900"
+                          aria-label="Decrease quantity"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          max={99}
+                          value={item.quantity}
+                          onChange={(event) => updateItemQuantity(idx, Number(event.target.value || 1))}
+                          className="w-10 border-x border-gray-300 bg-transparent px-1 py-0.5 text-center text-xs text-gray-900 outline-none dark:border-gray-700 dark:text-gray-100"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updateItemQuantity(idx, item.quantity + 1)}
+                          className="px-2 py-0.5 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-900"
+                          aria-label="Increase quantity"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="text-sm font-bold text-gray-900 dark:text-gray-100">₹{(Number(item.product.price) * item.quantity).toLocaleString()}</p>
+                        <button
+                          onClick={() => removeItem(idx)}
+                          className="text-sm text-red-600 hover:text-red-700 font-semibold"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 

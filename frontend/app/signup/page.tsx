@@ -72,7 +72,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 flex">
+    <div className="auth-shell min-h-screen flex">
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-5/12 relative overflow-hidden bg-gray-950">
         <div className="absolute inset-0 bg-gradient-to-b from-gray-900 to-black" />
@@ -132,7 +132,7 @@ export default function SignupPage() {
 
           {/* Social signup */}
           <div className="grid grid-cols-2 gap-3 mb-5">
-            <button className="flex items-center justify-center space-x-2 border border-gray-200 dark:border-gray-800 rounded-xl py-2.5 px-4 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+            <button className="auth-btn-social">
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -141,7 +141,7 @@ export default function SignupPage() {
               </svg>
               <span>Google</span>
             </button>
-            <button className="flex items-center justify-center space-x-2 border border-gray-200 dark:border-gray-800 rounded-xl py-2.5 px-4 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+            <button className="auth-btn-social">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
               </svg>
@@ -175,7 +175,7 @@ export default function SignupPage() {
                   onChange={handleChange}
                   required
                   placeholder="Aarav"
-                  className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-gray-900 dark:focus:border-gray-200 focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-white/10 transition-all"
+                  className="auth-input"
                 />
               </div>
               <div>
@@ -187,7 +187,7 @@ export default function SignupPage() {
                   onChange={handleChange}
                   required
                   placeholder="Sharma"
-                  className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-gray-900 dark:focus:border-gray-200 focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-white/10 transition-all"
+                  className="auth-input"
                 />
               </div>
             </div>
@@ -201,7 +201,7 @@ export default function SignupPage() {
                 onChange={handleChange}
                 required
                 placeholder="you@example.com"
-                className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-gray-900 dark:focus:border-gray-200 focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-white/10 transition-all"
+                className="auth-input"
               />
             </div>
 
@@ -215,7 +215,7 @@ export default function SignupPage() {
                   onChange={handleChange}
                   required
                   placeholder="Min 8 characters"
-                  className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-gray-900 dark:focus:border-gray-200 focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-white/10 pr-12 transition-all"
+                  className="auth-input pr-12"
                 />
                 <button type="button" onClick={() => setShowPassword(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -245,10 +245,10 @@ export default function SignupPage() {
                 onChange={handleChange}
                 required
                 placeholder="••••••••"
-                className={`w-full border rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all ${
+                className={`w-full rounded-xl px-4 py-3 text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all ${
                   form.confirmPassword && form.password !== form.confirmPassword
                     ? 'border-red-300 dark:border-red-900/60 focus:border-red-500 focus:ring-red-200 dark:focus:ring-red-900/40'
-                    : 'border-gray-200 dark:border-gray-800 focus:border-gray-900 dark:focus:border-gray-200 focus:ring-gray-900/10 dark:focus:ring-white/10'
+                    : 'border border-gray-200 dark:border-gray-800 focus:border-gray-900 dark:focus:border-gray-200 focus:ring-gray-900/10 dark:focus:ring-white/10'
                 }`}
               />
               {form.confirmPassword && form.password !== form.confirmPassword && (
@@ -275,7 +275,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gray-900 text-white font-semibold py-3 rounded-xl text-sm hover:bg-gray-700 active:bg-black transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center space-x-2 mt-2"
+              className="auth-btn-primary flex items-center justify-center space-x-2 mt-2"
             >
               {loading ? (
                 <>

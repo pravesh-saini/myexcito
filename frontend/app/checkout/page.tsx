@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { createOrder, fetchShippingConfig, validateCoupon } from '@/lib/api';
+import { getColorImageUrl } from '@/lib/productImages';
 
 type PaymentMode = '' | 'cod' | 'upi' | 'card';
 
@@ -31,6 +32,7 @@ export default function CheckoutPage() {
   const [flatShippingFee, setFlatShippingFee] = useState(79);
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(999);
   const [discountAmount, setDiscountAmount] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const subtotal = items.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
   const shippingFee = subtotal >= freeShippingThreshold ? 0 : flatShippingFee;
@@ -90,6 +92,7 @@ export default function CheckoutPage() {
     setError('');
 
     if (items.length === 0) return;
+    if (isSubmitting) return;
 
     if (!form.payment_mode) {
       setError('Please select a payment mode.');
@@ -97,7 +100,8 @@ export default function CheckoutPage() {
     }
 
     try {
-      await createOrder({
+      setIsSubmitting(true);
+      const createdOrder = await createOrder({
         ...form,
         payment_mode: form.payment_mode,
         items: items.map((item) => ({
@@ -108,10 +112,25 @@ export default function CheckoutPage() {
         })),
       });
 
+      const userKey = `excito_orders_${form.email.toLowerCase()}`;
+      const existingOrdersRaw = localStorage.getItem(userKey);
+      const existingOrders = existingOrdersRaw ? JSON.parse(existingOrdersRaw) : [];
+      const snapshot = {
+        id: createdOrder?.id ?? `local-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        totalAmount: Number(createdOrder?.total_amount ?? totalPayable),
+        paymentMode: form.payment_mode,
+        itemCount: items.length,
+        status: String(createdOrder?.status || 'pending'),
+      };
+      localStorage.setItem(userKey, JSON.stringify([snapshot, ...existingOrders].slice(0, 25)));
+
       clearCart();
       router.push('/');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create order');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -333,8 +352,8 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              <button type="submit" className="ui-btn-primary w-full">
-                Place Order
+              <button type="submit" disabled={isSubmitting} className="ui-btn-primary w-full disabled:opacity-60 disabled:cursor-not-allowed">
+                {isSubmitting ? 'Placing Order...' : 'Place Order'}
               </button>
             </form>
           </div>
@@ -347,24 +366,27 @@ export default function CheckoutPage() {
               </p>
 
               <div className="mt-5 space-y-4">
-                {items.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-3">
-                    {item.product.image_url ? (
-                      <img src={item.product.image_url} alt={item.product.name} className="w-12 h-12 rounded-xl object-cover" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                        <i className="ri-image-line text-lg text-gray-300" />
+                {items.map((item, idx) => {
+                  const itemImageUrl = getColorImageUrl(item.product, item.color);
+                  return (
+                    <div key={idx} className="flex items-center gap-3">
+                      {itemImageUrl ? (
+                        <img src={itemImageUrl} alt={item.product.name} className="w-12 h-12 rounded-xl object-cover" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <i className="ri-image-line text-lg text-gray-300" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{item.product.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                          Qty {item.quantity} · {item.size ? `Size ${item.size}` : 'Size -'} · {item.color ? item.color : 'Color -'}
+                        </p>
                       </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{item.product.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                        Qty {item.quantity} · {item.size ? `Size ${item.size}` : 'Size -'} · {item.color ? item.color : 'Color -'}
-                      </p>
+                      <p className="text-sm font-bold text-gray-900 dark:text-gray-100">₹{Number(item.product.price).toLocaleString()}</p>
                     </div>
-                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100">₹{Number(item.product.price).toLocaleString()}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">

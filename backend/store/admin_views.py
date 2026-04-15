@@ -2,20 +2,25 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
+from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from datetime import timedelta
 from decimal import Decimal
 from io import BytesIO
 from PIL import Image, ImageDraw
 import json
+import os
 import random
 import string
+import uuid
 from .models import Product, Order, OrderItem, StockHistory, LoyaltyCoupon, ShippingSetting, UserProfile, log_stock_change
 
 User = get_user_model()
@@ -83,6 +88,56 @@ def _placeholder_product_image(name: str) -> ContentFile:
     buf = BytesIO()
     img.save(buf, format='PNG')
     return ContentFile(buf.getvalue())
+
+
+def _normalize_color_key(value: str) -> str:
+    return '-'.join(str(value or '').strip().lower().split())
+
+
+def _resolve_color_image_urls(request, color_images):
+    if not isinstance(color_images, dict):
+        return {}
+
+    resolved = {}
+    for color_key, raw_path in color_images.items():
+        path = str(raw_path or '').strip()
+        if not path:
+            continue
+
+        if path.startswith('http://') or path.startswith('https://'):
+            resolved[color_key] = path
+            continue
+
+        if path.startswith('/'):
+            media_path = path
+        elif path.startswith(settings.MEDIA_URL):
+            media_path = path
+        else:
+            media_path = f"{settings.MEDIA_URL.rstrip('/')}/{path.lstrip('/')}"
+
+        resolved[color_key] = request.build_absolute_uri(media_path)
+
+    return resolved
+
+
+def _extract_color_images(request, colors, existing_color_images=None):
+    existing = existing_color_images if isinstance(existing_color_images, dict) else {}
+    color_images = {}
+
+    for idx, color in enumerate(colors):
+        color_key = _normalize_color_key(color)
+        uploaded = request.FILES.get(f'color_image_{idx}')
+
+        if uploaded:
+            ext = os.path.splitext(uploaded.name or '')[1].lower() or '.jpg'
+            ext = ext if ext in {'.jpg', '.jpeg', '.png', '.webp'} else '.jpg'
+            filename = f"{slugify(color) or 'color'}-{uuid.uuid4().hex[:8]}{ext}"
+            saved_path = default_storage.save(f'products/colors/{filename}', uploaded)
+            color_images[color_key] = saved_path
+        elif existing.get(color_key):
+            color_images[color_key] = existing[color_key]
+
+    return color_images
 
 
 def admin_login_required(view_func):
@@ -757,6 +812,7 @@ def admin_product_add(request):
 
         colors = [c.strip() for c in colors_raw.split(',') if c.strip()]
         sizes = [s.strip() for s in sizes_raw.split(',') if s.strip()]
+        color_images = _extract_color_images(request, colors)
 
         if category not in dict(Product._meta.get_field('category').choices):
             messages.error(request, 'Invalid category selected.')
@@ -766,6 +822,7 @@ def admin_product_add(request):
             name=name, description=description, price=price,
             original_price=original_price, category=category,
             section=section, brand=brand, colors=colors, sizes=sizes,
+            color_images=color_images,
             is_new=is_new, on_sale=on_sale, is_limited_stock=is_limited_stock,
             stock_count=stock_count, discount=discount
         )
@@ -785,7 +842,11 @@ def admin_product_add(request):
         messages.success(request, f'Product "{name}" added successfully.')
         return redirect('admin_products')
     
-    return render(request, 'admin_panel/product_form.html', {'action': 'Add', 'product': None})
+    return render(request, 'admin_panel/product_form.html', {
+        'action': 'Add',
+        'product': None,
+        'color_image_urls_json': json.dumps({}),
+    })
 
 
 @admin_login_required
@@ -807,8 +868,10 @@ def admin_product_edit(request, pk):
         product.brand = request.POST.get('brand', '')
         colors_raw = request.POST.get('colors', '')
         sizes_raw = request.POST.get('sizes', '')
-        product.colors = [c.strip() for c in colors_raw.split(',') if c.strip()]
+        colors = [c.strip() for c in colors_raw.split(',') if c.strip()]
+        product.colors = colors
         product.sizes = [s.strip() for s in sizes_raw.split(',') if s.strip()]
+        product.color_images = _extract_color_images(request, colors, product.color_images)
         product.is_new = request.POST.get('is_new') == 'on'
         product.on_sale = request.POST.get('on_sale') == 'on'
         product.is_limited_stock = request.POST.get('is_limited_stock') == 'on'
@@ -828,7 +891,11 @@ def admin_product_edit(request, pk):
         messages.success(request, f'Product "{product.name}" updated.')
         return redirect('admin_products')
     
-    return render(request, 'admin_panel/product_form.html', {'action': 'Edit', 'product': product})
+    return render(request, 'admin_panel/product_form.html', {
+        'action': 'Edit',
+        'product': product,
+        'color_image_urls_json': json.dumps(_resolve_color_image_urls(request, product.color_images)),
+    })
 
 
 @admin_login_required
@@ -866,13 +933,14 @@ def admin_order_detail(request, pk):
         if new_status:
             old_status = order.status
             restock_statuses = {'cancelled', 'returned'}
+            stock_managed_for_order = order.payment_mode == 'cod' or order.payment_status == 'paid'
 
             if new_status != old_status:
                 try:
                     with transaction.atomic():
                         order_items = list(order.items.select_related('product').all())
 
-                        if old_status not in restock_statuses and new_status in restock_statuses:
+                        if stock_managed_for_order and old_status not in restock_statuses and new_status in restock_statuses:
                             for item in order_items:
                                 product = Product.objects.select_for_update().get(pk=item.product_id)
                                 old_stock = product.stock_count
@@ -887,7 +955,7 @@ def admin_order_detail(request, pk):
                                     reason=f'Order #{order.id} moved to {new_status}',
                                 )
 
-                        if old_status in restock_statuses and new_status not in restock_statuses:
+                        if stock_managed_for_order and old_status in restock_statuses and new_status not in restock_statuses:
                             for item in order_items:
                                 product = Product.objects.select_for_update().get(pk=item.product_id)
                                 if product.stock_count < item.quantity:

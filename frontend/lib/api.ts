@@ -3,6 +3,8 @@ export interface Product {
   name: string;
   description: string;
   image_url: string;
+  color_images?: Record<string, string>;
+  color_image_urls?: Record<string, string>;
   price: number;
   original_price?: number | null;
   category: string;
@@ -87,6 +89,9 @@ export async function fetchProducts(params: { category?: string } = {}): Promise
 }
 
 export async function createOrder(data: OrderData) {
+  const idempotencyKey =
+    (typeof globalThis !== 'undefined' && globalThis.crypto?.randomUUID?.()) ||
+    `order-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   const bases = getApiBases();
   let lastError: unknown = null;
 
@@ -94,8 +99,14 @@ export async function createOrder(data: OrderData) {
     try {
       const res = await fetch(`${base}/orders/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
+        },
+        body: JSON.stringify({
+          ...data,
+          idempotency_key: idempotencyKey,
+        }),
       });
       if (!res.ok) {
         let message = 'Order creation failed';
@@ -299,4 +310,40 @@ export async function verifyEmailOtp(email: string, otp: string): Promise<{ deta
   }
 
   throw lastError instanceof Error ? lastError : new Error('OTP verification failed');
+}
+
+export async function updatePassword(input: {
+  email: string;
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+}): Promise<{ detail: string }> {
+  const bases = getApiBases();
+  let lastError: unknown = null;
+
+  for (const base of bases) {
+    try {
+      const res = await fetch(`${base}/auth/update-password/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) {
+        let message = 'Password update failed';
+        try {
+          const data = await res.json();
+          message = data.detail || message;
+        } catch {
+          const err = await res.text();
+          message = err || message;
+        }
+        throw new Error(message);
+      }
+      return res.json();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Password update failed');
 }

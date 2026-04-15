@@ -6,8 +6,6 @@ import { useState } from 'react';
 interface FilterSidebarProps {
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
-  selectedBrand: string;
-  setSelectedBrand: (brand: string) => void;
   priceRange: number[];
   setPriceRange: (range: number[]) => void;
 }
@@ -15,8 +13,6 @@ interface FilterSidebarProps {
 export default function FilterSidebar({
   selectedCategory,
   setSelectedCategory,
-  selectedBrand,
-  setSelectedBrand,
   priceRange,
   setPriceRange
 }: FilterSidebarProps) {
@@ -29,14 +25,6 @@ export default function FilterSidebar({
     { id: 'pants', name: 'Pants & Leggings' },
     { id: 'shoes', name: 'Shoes' },
     { id: 'outerwear', name: 'Outerwear' }
-  ];
-
-  const brands = [
-    { id: 'all', name: 'All Brands' },
-    { id: 'excito', name: 'Excito' },
-    { id: 'nike', name: 'Nike' },
-    { id: 'adidas', name: 'Adidas' },
-    { id: 'underarmour', name: 'Under Armour' }
   ];
 
   const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
@@ -58,25 +46,6 @@ export default function FilterSidebar({
                 className="mr-3 cursor-pointer"
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">{category.name}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-2xl border border-gray-200/60 dark:border-gray-800">
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Brand</h3>
-        <div className="space-y-2">
-          {brands.map((brand) => (
-            <label key={brand.id} className="flex items-center cursor-pointer">
-              <input
-                type="radio"
-                name="brand"
-                value={brand.id}
-                checked={selectedBrand === brand.id}
-                onChange={(e) => setSelectedBrand(e.target.value)}
-                className="mr-3 cursor-pointer"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{brand.name}</span>
             </label>
           ))}
         </div>

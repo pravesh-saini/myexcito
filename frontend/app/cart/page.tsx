@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { fetchShippingConfig } from '@/lib/api';
+import { getColorImageUrl } from '@/lib/productImages';
 
 export default function CartPage() {
-  const { items, removeItem, clearCart, totalItems } = useCart();
+  const { items, updateItemQuantity, removeItem, clearCart, totalItems } = useCart();
   const [flatShippingFee, setFlatShippingFee] = useState(79);
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(999);
 
@@ -42,25 +43,54 @@ export default function CartPage() {
         ) : (
           <div className="mt-7 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
             <div className="lg:col-span-2 ui-card p-6 sm:p-8 space-y-4">
-              {items.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 pb-4">
-                  {item.product.image_url ? (
-                    <img src={item.product.image_url} alt={item.product.name} className="w-16 h-16 object-cover rounded-xl" />
-                  ) : (
-                    <div className="w-16 h-16 rounded-xl bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-                      <i className="ri-image-line text-xl text-gray-300" />
+              {items.map((item, idx) => {
+                const itemImageUrl = getColorImageUrl(item.product, item.color);
+                return (
+                  <div key={idx} className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 pb-4">
+                    {itemImageUrl ? (
+                      <img src={itemImageUrl} alt={item.product.name} className="w-16 h-16 object-cover rounded-xl" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+                        <i className="ri-image-line text-xl text-gray-300" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{item.product.name}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                        {item.size ? `Size ${item.size}` : 'Size —'} · {item.color ? item.color : 'Color —'}
+                      </p>
+                      <div className="mt-2 inline-flex items-center overflow-hidden rounded-lg border border-gray-300 dark:border-gray-700">
+                        <button
+                          type="button"
+                          onClick={() => updateItemQuantity(idx, item.quantity - 1)}
+                          className="px-2.5 py-1 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-900"
+                          aria-label="Decrease quantity"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          max={99}
+                          value={item.quantity}
+                          onChange={(event) => updateItemQuantity(idx, Number(event.target.value || 1))}
+                          className="w-12 border-x border-gray-300 bg-transparent px-1 py-1 text-center text-sm text-gray-900 outline-none dark:border-gray-700 dark:text-gray-100"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updateItemQuantity(idx, item.quantity + 1)}
+                          className="px-2.5 py-1 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-900"
+                          aria-label="Increase quantity"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mt-1">₹{(Number(item.product.price) * item.quantity).toLocaleString()}</p>
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{item.product.name}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                      Qty {item.quantity} · {item.size ? `Size ${item.size}` : 'Size —'} · {item.color ? item.color : 'Color —'}
-                    </p>
-                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mt-1">₹{Number(item.product.price).toLocaleString()}</p>
+                    <button onClick={() => removeItem(idx)} className="text-sm text-red-600 hover:text-red-700 font-semibold">Remove</button>
                   </div>
-                  <button onClick={() => removeItem(idx)} className="text-sm text-red-600 hover:text-red-700 font-semibold">Remove</button>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="ui-card p-6 sm:p-7 lg:sticky lg:top-24 h-fit">

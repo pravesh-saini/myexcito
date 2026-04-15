@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { fetchProducts, Product } from '@/lib/api';
-import { useCart } from '@/context/CartContext';
+import QuickAddModal from '@/components/QuickAddModal';
 
 const COLOR_MAP: Record<string, string> = {
   black: 'bg-black',
@@ -24,13 +24,12 @@ const COLOR_MAP: Record<string, string> = {
 const MAX_FEATURED = 12;
 
 export default function FeaturedProducts() {
-  const { addItem } = useCart();
-
   const [favorites, setFavorites] = useState<number[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+  const [quickAdd, setQuickAdd] = useState<{ product: Product; size: string; color: string } | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -50,7 +49,11 @@ export default function FeaturedProducts() {
   };
 
   const handleAddToCart = (product: Product) => {
-    addItem(product, product.sizes?.[0] || '', product.colors?.[0] || '');
+    setQuickAdd({
+      product,
+      size: product.sizes?.[0] || '',
+      color: product.colors?.[0] || '',
+    });
   };
 
   const displayedProducts = products.slice(0, MAX_FEATURED);
@@ -102,7 +105,12 @@ export default function FeaturedProducts() {
           )}
 
           {!loading && !error && displayedProducts.map((product) => (
-            <div key={product.id} className="group cursor-pointer animate-card-in" style={{ animationDelay: `${(product.id % 8) * 50}ms` }}>
+            <div
+              key={product.id}
+              className="group cursor-pointer animate-card-in"
+              style={{ animationDelay: `${(product.id % 8) * 50}ms` }}
+              onClick={() => product.stock_count > 0 && handleAddToCart(product)}
+            >
               <div className="relative overflow-hidden rounded-lg bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow">
                 {product.image_url ? (
                   <img
@@ -117,7 +125,10 @@ export default function FeaturedProducts() {
                 )}
 
                 <button
-                  onClick={() => toggleFavorite(product.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(product.id);
+                  }}
                   className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-950 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                 >
                   <i className={favorites.includes(product.id) ? 'ri-heart-fill text-red-500' : 'ri-heart-line text-gray-600 dark:text-gray-300'}></i>
@@ -145,7 +156,10 @@ export default function FeaturedProducts() {
                     ))}
                   </div>
                   <button
-                    onClick={() => handleAddToCart(product)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddToCart(product);
+                    }}
                     className="w-full bg-white text-black py-2 rounded font-medium hover:bg-gray-100 transition-colors whitespace-nowrap cursor-pointer"
                   >
                     Add to Cart
@@ -166,6 +180,8 @@ export default function FeaturedProducts() {
           ))}
         </div>
       </div>
+
+      <QuickAddModal quickAdd={quickAdd} onClose={() => setQuickAdd(null)} />
     </section>
   );
 }

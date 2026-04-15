@@ -4,9 +4,19 @@ from .models import Product, Order, OrderItem
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'brand', 'price', 'on_sale', 'is_new')
+    list_display = ('name', 'category', 'brand', 'price', 'sizes_preview', 'colors_preview', 'on_sale', 'is_new')
     list_filter = ('category', 'brand', 'on_sale', 'is_new')
     search_fields = ('name', 'brand', 'description')
+
+    def sizes_preview(self, obj):
+        return ', '.join(obj.sizes or [])
+
+    sizes_preview.short_description = 'Sizes'
+
+    def colors_preview(self, obj):
+        return ', '.join(obj.colors or [])
+
+    colors_preview.short_description = 'Colors'
 
 
 class OrderItemInline(admin.TabularInline):

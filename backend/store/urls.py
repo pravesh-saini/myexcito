@@ -11,8 +11,10 @@ urlpatterns = [
     path('auth/verify-otp/', views.VerifyEmailOTP.as_view(), name='auth-verify-otp'),
     path('auth/signup/', views.SignupWithPassword.as_view(), name='auth-signup'),
     path('auth/login-password/', views.LoginWithPassword.as_view(), name='auth-login-password'),
+    path('auth/update-password/', views.UpdatePasswordView.as_view(), name='auth-update-password'),
     path('shipping/config/', views.ShippingConfigView.as_view(), name='shipping-config'),
     path('coupons/validate/', views.ValidateCouponView.as_view(), name='coupon-validate'),
+    path('payments/webhook/', views.PaymentWebhookView.as_view(), name='payment-webhook'),
 ]
 
 # Custom Admin panel routes (under /admin/)

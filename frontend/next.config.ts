@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Hide the Next.js development indicator (floating "N" badge).
+  devIndicators: false,
   turbopack: {
     root: __dirname,
   },

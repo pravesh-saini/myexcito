@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Pacifico } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from '@/context/CartContext';
 import ThemeInitializer from '@/components/ThemeInitializer';
+import Header from '@/components/Header';
 
 const pacifico = Pacifico({
   weight: '400',
@@ -39,6 +40,7 @@ export default function RootLayout({
       >
         <ThemeInitializer />
         <CartProvider>
+          <Header />
           {children}
         </CartProvider>
       </body>

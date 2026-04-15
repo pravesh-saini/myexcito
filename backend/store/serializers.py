@@ -1,6 +1,8 @@
 from rest_framework import serializers
+from django.conf import settings
 from django.db import transaction
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from decimal import Decimal, ROUND_HALF_UP
 from .models import Product, Order, OrderItem, LoyaltyCoupon, ShippingSetting, log_stock_change
 
@@ -10,16 +12,63 @@ User = get_user_model()
 
 class ProductSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
+    color_image_urls = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = (
+            'id',
+            'name',
+            'description',
+            'image',
+            'image_url',
+            'color_images',
+            'color_image_urls',
+            'price',
+            'original_price',
+            'category',
+            'section',
+            'brand',
+            'colors',
+            'sizes',
+            'is_new',
+            'on_sale',
+            'is_limited_stock',
+            'stock_count',
+            'discount',
+        )
 
     def get_image_url(self, obj):
         request = self.context.get('request')
         if obj.image and request:
             return request.build_absolute_uri(obj.image.url)
         return ''
+
+    def get_color_image_urls(self, obj):
+        request = self.context.get('request')
+        if not request:
+            return obj.color_images or {}
+
+        resolved = {}
+        for color_key, raw_path in (obj.color_images or {}).items():
+            path = str(raw_path or '').strip()
+            if not path:
+                continue
+
+            if path.startswith('http://') or path.startswith('https://'):
+                resolved[color_key] = path
+                continue
+
+            if path.startswith('/'):
+                media_path = path
+            elif path.startswith(settings.MEDIA_URL):
+                media_path = path
+            else:
+                media_path = f"{settings.MEDIA_URL.rstrip('/')}/{path.lstrip('/')}"
+
+            resolved[color_key] = request.build_absolute_uri(media_path)
+
+        return resolved
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -33,14 +82,30 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
     user = serializers.PrimaryKeyRelatedField(read_only=True)
+    idempotency_key = serializers.CharField(max_length=64, write_only=True)
+    payment_status = serializers.CharField(read_only=True)
+    payment_reference = serializers.CharField(read_only=True)
+    paid_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = Order
         fields = ('id', 'user', 'first_name', 'last_name', 'email', 'phone',
                   'payment_mode', 'address_line1', 'address_line2', 'city', 'state',
-                  'postal_code', 'country', 'status', 'subtotal_amount', 'shipping_fee',
-                  'discount_amount', 'coupon_code', 'total_amount', 'items', 'created_at')
-        read_only_fields = ('id', 'status', 'subtotal_amount', 'shipping_fee', 'discount_amount', 'total_amount', 'created_at')
+                  'postal_code', 'country', 'status', 'payment_status', 'payment_reference',
+                  'subtotal_amount', 'shipping_fee', 'discount_amount', 'coupon_code',
+                  'total_amount', 'idempotency_key', 'paid_at', 'items', 'created_at')
+        read_only_fields = (
+            'id',
+            'status',
+            'payment_status',
+            'payment_reference',
+            'subtotal_amount',
+            'shipping_fee',
+            'discount_amount',
+            'total_amount',
+            'paid_at',
+            'created_at',
+        )
 
     def validate_payment_mode(self, value):
         if not value:
@@ -50,6 +115,8 @@ class OrderSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         items_data = validated_data.pop('items')
         coupon_code = (validated_data.get('coupon_code') or '').strip().upper()
+        validated_data['coupon_code'] = coupon_code
+        validated_data['email'] = (validated_data.get('email') or '').strip().lower()
         subtotal = Decimal('0.00')
 
         request = self.context.get('request')
@@ -62,8 +129,12 @@ class OrderSerializer(serializers.ModelSerializer):
         if linked_user:
             validated_data['user'] = linked_user
 
+        reserve_stock_now = validated_data.get('payment_mode') == 'cod'
+        validated_data['payment_status'] = 'cod_pending' if reserve_stock_now else 'pending'
+
         with transaction.atomic():
             order = Order.objects.create(**validated_data)
+            stock_logs = []
 
             for item in items_data:
                 product = Product.objects.select_for_update().get(pk=item['product'].pk)
@@ -76,15 +147,17 @@ class OrderSerializer(serializers.ModelSerializer):
                         'items': f'Insufficient stock for "{product.name}". Available: {product.stock_count}.',
                     })
 
-                old_stock = product.stock_count
-                product.stock_count -= quantity
-                product.is_limited_stock = 0 < product.stock_count <= 5
-                product.save(update_fields=['stock_count', 'is_limited_stock'])
-
                 price = product.price
                 subtotal += Decimal(price) * Decimal(quantity)
                 OrderItem.objects.create(order=order, product=product, price=price, quantity=quantity,
                                          size=item.get('size', ''), color=item.get('color', ''))
+
+                if reserve_stock_now:
+                    old_stock = product.stock_count
+                    product.stock_count -= quantity
+                    product.is_limited_stock = 0 < product.stock_count <= 5
+                    product.save(update_fields=['stock_count', 'is_limited_stock'])
+                    stock_logs.append((product, old_stock, product.stock_count))
 
             shipping = ShippingSetting.objects.first()
             flat_fee = Decimal(str(shipping.flat_shipping_fee if shipping else Decimal('79.00')))
@@ -96,7 +169,7 @@ class OrderSerializer(serializers.ModelSerializer):
                 coupon = LoyaltyCoupon.objects.filter(code=coupon_code, is_active=True).select_related('user').first()
                 if not coupon:
                     raise serializers.ValidationError({'coupon_code': 'Invalid or inactive coupon code.'})
-                if coupon.expires_at and coupon.expires_at < order.created_at:
+                if coupon.expires_at and coupon.expires_at < timezone.now():
                     raise serializers.ValidationError({'coupon_code': 'Coupon is expired.'})
                 if linked_user and coupon.user_id != linked_user.id:
                     raise serializers.ValidationError({'coupon_code': 'Coupon does not belong to this user.'})
@@ -120,12 +193,11 @@ class OrderSerializer(serializers.ModelSerializer):
             order.total_amount = total
             order.save(update_fields=['subtotal_amount', 'shipping_fee', 'discount_amount', 'coupon_code', 'total_amount'])
 
-            for order_item in order.items.select_related('product').all():
-                product = order_item.product
+            for product, old_stock, new_stock in stock_logs:
                 log_stock_change(
                     product=product,
-                    old_stock=product.stock_count + order_item.quantity,
-                    new_stock=product.stock_count,
+                    old_stock=old_stock,
+                    new_stock=new_stock,
                     changed_by=None,
                     reason=f'Order #{order.id} placed',
                 )

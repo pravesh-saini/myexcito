@@ -3,11 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { fetchProducts, Product } from '@/lib/api';
-import { useCart } from '@/context/CartContext';
+import QuickAddModal from '@/components/QuickAddModal';
 
 interface ProductGridProps {
   selectedCategory: string;
-  selectedBrand: string;
   sortBy: string;
   priceRange: number[];
 }
@@ -19,13 +18,12 @@ const COLOR_MAP: Record<string, string> = {
   olive: 'bg-green-600', multicolor: 'bg-gradient-to-r from-red-400 via-yellow-400 to-blue-400',
 };
 
-export default function ProductGrid({ selectedCategory, selectedBrand, sortBy, priceRange }: ProductGridProps) {
+export default function ProductGrid({ selectedCategory, sortBy, priceRange }: ProductGridProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [favorites, setFavorites] = useState<number[]>([]);
   const [quickAdd, setQuickAdd] = useState<{ product: Product; size: string; color: string } | null>(null);
-  const { addItem } = useCart();
 
   useEffect(() => {
     setLoading(true);
@@ -42,17 +40,10 @@ export default function ProductGrid({ selectedCategory, selectedBrand, sortBy, p
     setQuickAdd({ product, size: product.sizes[0] || '', color: product.colors[0] || '' });
   };
 
-  const confirmAddToCart = () => {
-    if (!quickAdd) return;
-    addItem(quickAdd.product, quickAdd.size, quickAdd.color);
-    setQuickAdd(null);
-  };
-
   const filteredProducts = products.filter(p => {
     const catMatch = selectedCategory === 'all' || p.section === selectedCategory;
-    const brandMatch = selectedBrand === 'all' || (p.brand || '').toLowerCase() === selectedBrand.toLowerCase();
     const priceMatch = p.price >= priceRange[0] && p.price <= priceRange[1];
-    return catMatch && brandMatch && priceMatch;
+    return catMatch && priceMatch;
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -148,37 +139,7 @@ export default function ProductGrid({ selectedCategory, selectedBrand, sortBy, p
           </div>
         ))}
       </div>
-      {quickAdd && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-950 rounded-2xl shadow-xl p-6 max-w-sm w-full animate-section-in border border-gray-100 dark:border-gray-800">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="font-bold text-gray-900 dark:text-gray-100">{quickAdd.product.name}</h3>
-              <button onClick={() => setQuickAdd(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"><i className="ri-close-line text-xl"></i></button>
-            </div>
-            <div className="mb-4">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Size</p>
-              <div className="flex flex-wrap gap-2">
-                {quickAdd.product.sizes.map(s => (
-                  <button key={s} onClick={() => setQuickAdd(prev => prev ? { ...prev, size: s } : null)}
-                    className={"px-3 py-1.5 rounded-lg border text-sm font-medium cursor-pointer transition-colors " + (quickAdd.size === s ? 'bg-black text-white border-black' : 'border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-black dark:hover:border-gray-200')}>{s}</button>
-                ))}
-              </div>
-            </div>
-            <div className="mb-6">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Color</p>
-              <div className="flex flex-wrap gap-2">
-                {quickAdd.product.colors.map(c => (
-                  <button key={c} onClick={() => setQuickAdd(prev => prev ? { ...prev, color: c } : null)}
-                    className={"px-3 py-1.5 rounded-lg border text-sm capitalize cursor-pointer transition-colors " + (quickAdd.color === c ? 'bg-black text-white border-black' : 'border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-black dark:hover:border-gray-200')}>{c}</button>
-                ))}
-              </div>
-            </div>
-            <button onClick={confirmAddToCart} className="w-full bg-black text-white py-3 rounded-xl font-medium hover:bg-gray-800 transition-colors cursor-pointer">
-              Add to Cart
-            </button>
-          </div>
-        </div>
-      )}
+      <QuickAddModal quickAdd={quickAdd} onClose={() => setQuickAdd(null)} />
     </>
   );
 }
