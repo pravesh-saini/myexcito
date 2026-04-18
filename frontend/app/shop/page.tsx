@@ -1,11 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
 import { fetchProducts, Product } from '@/lib/api';
 import QuickAddModal from '@/components/QuickAddModal';
+
+const SHOP_CATEGORIES = ['all', 'men', 'women', 'kids', 'sale'] as const;
+const SHOP_SORTS = ['featured', 'newest', 'price-low', 'price-high', 'sale'] as const;
+const SHOP_FILTERS_KEY = 'excito_shop_filters';
 
 const COLOR_MAP: Record<string, string> = {
   black: 'bg-black',
@@ -22,20 +26,118 @@ const COLOR_MAP: Record<string, string> = {
   multicolor: 'bg-gradient-to-r from-red-400 via-yellow-400 to-blue-400',
 };
 
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const isValidCategory = (value: string): value is (typeof SHOP_CATEGORIES)[number] =>
+  SHOP_CATEGORIES.includes(value as (typeof SHOP_CATEGORIES)[number]);
+
+const isValidSort = (value: string): value is (typeof SHOP_SORTS)[number] =>
+  SHOP_SORTS.includes(value as (typeof SHOP_SORTS)[number]);
+
+const highlightMatch = (text: string, query: string) => {
+  const normalized = query.trim();
+  if (normalized.length < 2) {
+    return text;
+  }
+
+  const regex = new RegExp(`(${escapeRegExp(normalized)})`, 'ig');
+  const parts = text.split(regex);
+
+  return parts.map((part, index) =>
+    part.toLowerCase() === normalized.toLowerCase() ? (
+      <mark key={`${part}-${index}`} className="rounded bg-yellow-200/70 px-0.5 text-gray-900 dark:bg-yellow-300/30 dark:text-yellow-100">
+        {part}
+      </mark>
+    ) : (
+      <span key={`${part}-${index}`}>{part}</span>
+    )
+  );
+};
+
 export default function ShopPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('all');
-  const [sortBy, setSortBy] = useState('featured');
+  const [category, setCategory] = useState<(typeof SHOP_CATEGORIES)[number]>('all');
+  const [sortBy, setSortBy] = useState<(typeof SHOP_SORTS)[number]>('featured');
   const [quickAdd, setQuickAdd] = useState<{ product: Product; size: string; color: string } | null>(null);
 
   useEffect(() => {
-    const query = (searchParams.get('search') || '').trim();
-    setSearch(query);
+    const urlSearch = (searchParams.get('search') || '').trim();
+    const urlCategory = (searchParams.get('category') || 'all').trim().toLowerCase();
+    const urlSort = (searchParams.get('sort') || 'featured').trim().toLowerCase();
+
+    setSearch(urlSearch);
+    setCategory(isValidCategory(urlCategory) ? urlCategory : 'all');
+    setSortBy(isValidSort(urlSort) ? urlSort : 'featured');
   }, [searchParams]);
+
+  const buildShopUrl = (next: { search?: string; category?: string; sort?: string }) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const nextSearch = (next.search ?? search).trim();
+    const nextCategory = (next.category ?? category).trim().toLowerCase();
+    const nextSort = (next.sort ?? sortBy).trim().toLowerCase();
+
+    if (nextSearch) {
+      params.set('search', nextSearch);
+    } else {
+      params.delete('search');
+    }
+
+    if (nextCategory && nextCategory !== 'all') {
+      params.set('category', nextCategory);
+    } else {
+      params.delete('category');
+    }
+
+    if (nextSort && nextSort !== 'featured') {
+      params.set('sort', nextSort);
+    } else {
+      params.delete('sort');
+    }
+
+    const queryString = params.toString();
+    return queryString ? `${pathname}?${queryString}` : pathname;
+  };
+
+  useEffect(() => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = null;
+    }
+
+    searchDebounceRef.current = setTimeout(() => {
+      const currentSearch = (searchParams.get('search') || '').trim();
+      const nextSearch = search.trim();
+      if (currentSearch === nextSearch) {
+        return;
+      }
+
+      router.replace(buildShopUrl({ search: nextSearch }), { scroll: false });
+    }, 250);
+
+    return () => {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+        searchDebounceRef.current = null;
+      }
+    };
+  }, [search, searchParams, router, pathname, category, sortBy]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      SHOP_FILTERS_KEY,
+      JSON.stringify({
+        category,
+        sort: sortBy,
+      })
+    );
+  }, [category, sortBy]);
 
   useEffect(() => {
     setLoading(true);
@@ -74,7 +176,29 @@ export default function ShopPage() {
     });
   }, [products, search, category, sortBy]);
 
-  const categories = ['all', 'men', 'women', 'kids', 'sale'];
+  const emptyStateSuggestions = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) {
+      return ['running', 't-shirt', 'joggers', 'hoodie'];
+    }
+
+    const token = query.split(/\s+/)[0];
+    const productNames = products
+      .filter((product) => (product.name || '').toLowerCase().includes(token))
+      .slice(0, 4)
+      .map((product) => product.name);
+
+    const sections = Array.from(new Set(products.map((product) => product.section).filter(Boolean)))
+      .filter((section) => section.toLowerCase().includes(token))
+      .slice(0, 2);
+
+    const combined = [...productNames, ...sections];
+    if (!combined.length) {
+      return ['running', 'training', 'sale', 'activewear'];
+    }
+
+    return Array.from(new Set(combined)).slice(0, 6);
+  }, [products, search]);
 
   const openQuickAdd = (product: Product) => {
     setQuickAdd({
@@ -82,6 +206,30 @@ export default function ShopPage() {
       size: product.sizes?.[0] || '',
       color: product.colors?.[0] || '',
     });
+  };
+
+  const handleCategoryChange = (value: string) => {
+    const nextCategory = isValidCategory(value) ? value : 'all';
+    setCategory(nextCategory);
+    router.replace(buildShopUrl({ category: nextCategory }), { scroll: false });
+  };
+
+  const handleSortChange = (value: string) => {
+    const nextSort = isValidSort(value) ? value : 'featured';
+    setSortBy(nextSort);
+    router.replace(buildShopUrl({ sort: nextSort }), { scroll: false });
+  };
+
+  const resetSearchAndFilters = () => {
+    setSearch('');
+    setCategory('all');
+    setSortBy('featured');
+    router.replace(pathname, { scroll: false });
+  };
+
+  const applySuggestedSearch = (value: string) => {
+    setSearch(value);
+    router.replace(buildShopUrl({ search: value }), { scroll: false });
   };
 
   return (
@@ -105,10 +253,10 @@ export default function ShopPage() {
                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  onChange={(e) => handleCategoryChange(e.target.value)}
                   className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-gray-500 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100"
                 >
-                  {categories.map((item) => (
+                  {SHOP_CATEGORIES.map((item) => (
                     <option key={item} value={item}>
                       {item === 'all' ? 'All Categories' : item[0].toUpperCase() + item.slice(1)}
                     </option>
@@ -120,7 +268,7 @@ export default function ShopPage() {
                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Sort</label>
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
+                  onChange={(e) => handleSortChange(e.target.value)}
                   className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-gray-500 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100"
                 >
                   <option value="featured">Featured</option>
@@ -158,8 +306,29 @@ export default function ShopPage() {
 
           {!loading && !error && filteredProducts.length === 0 && (
             <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-10 text-center dark:border-gray-800 dark:bg-gray-900">
-              <p className="text-lg font-medium text-gray-700 dark:text-gray-200">No products found for this filter.</p>
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Try changing category, sorting, or your search term.</p>
+              <p className="text-lg font-medium text-gray-700 dark:text-gray-200">
+                No products matched{search.trim() ? ` "${search.trim()}"` : ' your current filters'}.
+              </p>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Try quick suggestions below or reset all filters.</p>
+              <div className="mt-5 flex flex-wrap justify-center gap-2">
+                {emptyStateSuggestions.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => applySuggestedSearch(item)}
+                    className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={resetSearchAndFilters}
+                className="mt-5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+              >
+                Clear Search and Filters
+              </button>
             </div>
           )}
 
@@ -189,8 +358,10 @@ export default function ShopPage() {
                   </div>
 
                   <div className="p-4">
-                    <h3 className="line-clamp-1 text-base font-semibold text-gray-900 dark:text-gray-100">{product.name}</h3>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{product.brand || 'Excito'} • {product.section || 'All'}</p>
+                    <h3 className="line-clamp-1 text-base font-semibold text-gray-900 dark:text-gray-100">{highlightMatch(product.name, search)}</h3>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      {highlightMatch(product.brand || 'Excito', search)} • {highlightMatch(product.section || 'All', search)}
+                    </p>
 
                     <div className="mt-3 flex flex-wrap gap-2">
                       {(product.colors || []).slice(0, 5).map((color, index) => (

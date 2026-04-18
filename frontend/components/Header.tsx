@@ -1,11 +1,32 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
+import { fetchProducts, Product } from '@/lib/api';
 import ThemeToggle from './ThemeToggle';
+
+const RECENT_SEARCHES_KEY = 'excito_recent_searches_v1';
+const SEARCH_ANALYTICS_KEY = 'excito_search_analytics_v1';
+const SHOP_FILTERS_KEY = 'excito_shop_filters';
+const MAX_RECENT_SEARCHES = 8;
+const MAX_SUGGESTIONS = 8;
+const MIN_AUTO_SEARCH_CHARS = 2;
+
+type SearchSuggestion = {
+  value: string;
+  label: string;
+  kind: 'recent' | 'product' | 'brand' | 'section';
+};
+
+type SearchAnalytics = {
+  totalSearches: number;
+  lastSearchAt: string;
+  topQueries: Record<string, number>;
+  sources: Record<string, number>;
+};
 
 type CategoryCard = {
   href: string;
@@ -23,6 +44,9 @@ export default function Header() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchCatalog, setSearchCatalog] = useState<Product[]>([]);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -30,10 +54,12 @@ export default function Header() {
   const [user, setUser] = useState<{ id?: number; email: string; firstName?: string; first_name?: string } | null>(null);
   const [avatarDataUrl, setAvatarDataUrl] = useState('');
   const { totalItems } = useCart();
+  const searchBoxRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const categoriesRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout>(null);
   const liveSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTrackedRef = useRef<{ query: string; source: string; at: number } | null>(null);
   const currentSearchParam = (searchParams.get('search') || '').trim();
 
   const navLinks = [
@@ -121,6 +147,38 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
+    try {
+      const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as string[];
+        if (Array.isArray(parsed)) {
+          setRecentSearches(parsed.filter(Boolean).slice(0, MAX_RECENT_SEARCHES));
+        }
+      }
+    } catch {
+      setRecentSearches([]);
+    }
+
+    let isCancelled = false;
+    fetchProducts()
+      .then((items) => {
+        if (isCancelled) {
+          return;
+        }
+        setSearchCatalog(items || []);
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setSearchCatalog([]);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
       if (userMenuRef.current && !userMenuRef.current.contains(target)) {
@@ -129,6 +187,9 @@ export default function Header() {
       if (categoriesRef.current && !categoriesRef.current.contains(target)) {
         setIsCategoriesOpen(false);
         setHoveredCard(null);
+      }
+      if (searchBoxRef.current && !searchBoxRef.current.contains(target)) {
+        setIsSearchFocused(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -141,19 +202,215 @@ export default function Header() {
   useEffect(() => {
     setIsCategoriesOpen(false);
     setIsMenuOpen(false);
+    setIsSearchFocused(false);
     setHoveredCard(null);
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
   }, [pathname]);
+
+  const readStoredShopFilters = () => {
+    try {
+      const raw = localStorage.getItem(SHOP_FILTERS_KEY);
+      if (!raw) {
+        return { category: '', sort: '' };
+      }
+
+      const parsed = JSON.parse(raw) as { category?: string; sort?: string };
+      return {
+        category: (parsed.category || '').trim().toLowerCase(),
+        sort: (parsed.sort || '').trim().toLowerCase(),
+      };
+    } catch {
+      return { category: '', sort: '' };
+    }
+  };
+
+  const persistRecentSearch = (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    setRecentSearches((prev) => {
+      const deduped = [trimmed, ...prev.filter((item) => item.toLowerCase() !== trimmed.toLowerCase())].slice(0, MAX_RECENT_SEARCHES);
+      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(deduped));
+      return deduped;
+    });
+  };
+
+  const trackSearchAnalytics = (query: string, source: string) => {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) {
+      return;
+    }
+
+    const now = Date.now();
+    const lastTracked = lastTrackedRef.current;
+    if (lastTracked && lastTracked.query === trimmed && lastTracked.source === source && now - lastTracked.at < 1200) {
+      return;
+    }
+
+    lastTrackedRef.current = {
+      query: trimmed,
+      source,
+      at: now,
+    };
+
+    const fallback: SearchAnalytics = {
+      totalSearches: 0,
+      lastSearchAt: '',
+      topQueries: {},
+      sources: {},
+    };
+
+    try {
+      const raw = localStorage.getItem(SEARCH_ANALYTICS_KEY);
+      const existing = raw ? (JSON.parse(raw) as SearchAnalytics) : fallback;
+      const next: SearchAnalytics = {
+        totalSearches: Number(existing.totalSearches || 0) + 1,
+        lastSearchAt: new Date().toISOString(),
+        topQueries: {
+          ...(existing.topQueries || {}),
+          [trimmed]: Number(existing.topQueries?.[trimmed] || 0) + 1,
+        },
+        sources: {
+          ...(existing.sources || {}),
+          [source]: Number(existing.sources?.[source] || 0) + 1,
+        },
+      };
+      localStorage.setItem(SEARCH_ANALYTICS_KEY, JSON.stringify(next));
+    } catch {
+      localStorage.setItem(SEARCH_ANALYTICS_KEY, JSON.stringify(fallback));
+    }
+  };
+
+  const buildShopSearchUrl = (query: string) => {
+    const params = new URLSearchParams();
+    const stored = readStoredShopFilters();
+
+    const activeCategory = pathname.startsWith('/shop')
+      ? (searchParams.get('category') || '').trim().toLowerCase()
+      : stored.category;
+
+    const activeSort = pathname.startsWith('/shop')
+      ? (searchParams.get('sort') || '').trim().toLowerCase()
+      : stored.sort;
+
+    if (activeCategory && activeCategory !== 'all') {
+      params.set('category', activeCategory);
+    }
+
+    if (activeSort && activeSort !== 'featured') {
+      params.set('sort', activeSort);
+    }
+
+    if (query) {
+      params.set('search', query);
+    }
+
+    const queryString = params.toString();
+    return queryString ? `/shop?${queryString}` : '/shop';
+  };
+
+  const runSearchNavigation = (
+    rawQuery: string,
+    source: 'live' | 'submit' | 'suggestion' | 'recent',
+    mode: 'replace' | 'push' = 'replace'
+  ) => {
+    const query = rawQuery.trim();
+    const targetUrl = buildShopSearchUrl(query);
+
+    if (query) {
+      persistRecentSearch(query);
+      trackSearchAnalytics(query, source);
+    }
+
+    if (mode === 'push') {
+      router.push(targetUrl);
+      return;
+    }
+
+    router.replace(targetUrl, { scroll: false });
+  };
+
+  const suggestionItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    const suggestions: SearchSuggestion[] = [];
+    const seen = new Set<string>();
+
+    const addSuggestion = (item: SearchSuggestion) => {
+      const key = `${item.kind}:${item.value.toLowerCase()}`;
+      if (seen.has(key)) {
+        return;
+      }
+      seen.add(key);
+      suggestions.push(item);
+    };
+
+    if (!query) {
+      recentSearches.slice(0, MAX_SUGGESTIONS).forEach((value) => {
+        addSuggestion({ value, label: value, kind: 'recent' });
+      });
+      return suggestions;
+    }
+
+    recentSearches
+      .filter((item) => item.toLowerCase().includes(query))
+      .slice(0, 3)
+      .forEach((value) => {
+        addSuggestion({ value, label: value, kind: 'recent' });
+      });
+
+    if (query.length < MIN_AUTO_SEARCH_CHARS) {
+      return suggestions;
+    }
+
+    searchCatalog
+      .filter((product) => (product.name || '').toLowerCase().includes(query))
+      .slice(0, 4)
+      .forEach((product) => {
+        addSuggestion({
+          value: product.name,
+          label: product.name,
+          kind: 'product',
+        });
+      });
+
+    Array.from(new Set(searchCatalog.map((product) => product.brand).filter(Boolean)))
+      .filter((brand) => brand.toLowerCase().includes(query))
+      .slice(0, 2)
+      .forEach((brand) => {
+        addSuggestion({
+          value: brand,
+          label: brand,
+          kind: 'brand',
+        });
+      });
+
+    Array.from(new Set(searchCatalog.map((product) => product.section).filter(Boolean)))
+      .filter((section) => section.toLowerCase().includes(query))
+      .slice(0, 2)
+      .forEach((section) => {
+        addSuggestion({
+          value: section,
+          label: section,
+          kind: 'section',
+        });
+      });
+
+    return suggestions.slice(0, MAX_SUGGESTIONS);
+  }, [searchQuery, recentSearches, searchCatalog]);
+
+  const showSuggestionDropdown = isSearchFocused && (suggestionItems.length > 0 || !!searchQuery.trim());
 
   useEffect(() => {
     if (!pathname.startsWith('/shop')) {
       return;
     }
 
-    if (searchQuery !== currentSearchParam) {
-      setSearchQuery(currentSearchParam);
-    }
-  }, [pathname, currentSearchParam, searchQuery]);
+    // Keep header input aligned with URL search only when the route param changes.
+    // Do not depend on searchQuery here, otherwise manual typing gets reverted.
+    setSearchQuery(currentSearchParam);
+  }, [pathname, currentSearchParam]);
 
   useEffect(() => {
     if (liveSearchTimeoutRef.current) {
@@ -166,10 +423,19 @@ export default function Header() {
     if (!query) {
       if (pathname.startsWith('/shop') && currentSearchParam) {
         liveSearchTimeoutRef.current = setTimeout(() => {
-          router.replace('/shop', { scroll: false });
+          runSearchNavigation('', 'live', 'replace');
         }, 300);
       }
 
+      return () => {
+        if (liveSearchTimeoutRef.current) {
+          clearTimeout(liveSearchTimeoutRef.current);
+          liveSearchTimeoutRef.current = null;
+        }
+      };
+    }
+
+    if (query.length < MIN_AUTO_SEARCH_CHARS) {
       return () => {
         if (liveSearchTimeoutRef.current) {
           clearTimeout(liveSearchTimeoutRef.current);
@@ -183,7 +449,7 @@ export default function Header() {
         return;
       }
 
-      router.replace(`/shop?search=${encodeURIComponent(query)}`, { scroll: false });
+      runSearchNavigation(query, 'live', 'replace');
     }, 300);
 
     return () => {
@@ -192,7 +458,7 @@ export default function Header() {
         liveSearchTimeoutRef.current = null;
       }
     };
-  }, [searchQuery, pathname, currentSearchParam, router]);
+  }, [searchQuery, pathname, currentSearchParam]);
 
   const handleLogout = () => {
     localStorage.removeItem('excito_user');
@@ -203,15 +469,40 @@ export default function Header() {
     router.push('/');
   };
 
+  const clearSearchInput = () => {
+    setSearchQuery('');
+    if (pathname.startsWith('/shop') || currentSearchParam) {
+      runSearchNavigation('', 'live', 'replace');
+    }
+  };
+
+  const handleSearchInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Escape') {
+      return;
+    }
+
+    event.preventDefault();
+    clearSearchInput();
+    setIsSearchFocused(false);
+    event.currentTarget.blur();
+  };
+
+  const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
+    setSearchQuery(suggestion.value);
+    setIsSearchFocused(false);
+    runSearchNavigation(suggestion.value, suggestion.kind === 'recent' ? 'recent' : 'suggestion', 'push');
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const query = searchQuery.trim();
     if (!query) {
-      router.push('/shop');
+      runSearchNavigation('', 'submit', 'push');
       return;
     }
 
-    router.push(`/shop?search=${encodeURIComponent(query)}`);
+    setIsSearchFocused(false);
+    runSearchNavigation(query, 'submit', 'push');
   };
 
   return (
@@ -334,20 +625,67 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center space-x-4">
-            <form onSubmit={handleSearch} className="hidden md:block">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-64 px-4 py-2 pl-10 border border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/15 focus:border-transparent text-sm transition-all duration-300"
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i className="ri-search-line text-gray-400 transition-colors duration-300"></i>
+            <div className="hidden md:block w-72 relative" ref={searchBoxRef}>
+              <form onSubmit={handleSearch}>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onKeyDown={handleSearchInputKeyDown}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full px-4 py-2 pl-10 pr-9 border border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/15 focus:border-transparent text-sm transition-all duration-300"
+                  />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i className="ri-search-line text-gray-400 transition-colors duration-300"></i>
+                  </div>
+                  {searchQuery.trim() && (
+                    <button
+                      type="button"
+                      onClick={clearSearchInput}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                      aria-label="Clear search"
+                    >
+                      <i className="ri-close-line text-lg"></i>
+                    </button>
+                  )}
                 </div>
-              </div>
-            </form>
+              </form>
+
+              {showSuggestionDropdown && (
+                <div className="absolute mt-2 w-72 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-950 z-[60]">
+                  {searchQuery.trim().length > 0 && searchQuery.trim().length < MIN_AUTO_SEARCH_CHARS && (
+                    <p className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800">
+                      Type at least {MIN_AUTO_SEARCH_CHARS} letters for live search.
+                    </p>
+                  )}
+
+                  {suggestionItems.length > 0 ? (
+                    <div className="max-h-72 overflow-y-auto py-1">
+                      {suggestionItems.map((suggestion) => (
+                        <button
+                          key={`${suggestion.kind}-${suggestion.value}`}
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleSuggestionSelect(suggestion)}
+                          className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-900"
+                        >
+                          <span className="text-sm text-gray-800 dark:text-gray-200 truncate">{suggestion.label}</span>
+                          <span className="text-[11px] uppercase tracking-wide text-gray-400">
+                            {suggestion.kind}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-3 py-3 text-sm text-gray-500 dark:text-gray-400">
+                      No quick suggestions. Press Enter to search this term.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div className="flex items-center space-x-3">
               <ThemeToggle />
@@ -491,12 +829,23 @@ export default function Header() {
                   type="text"
                   placeholder="Search products..."
                   value={searchQuery}
+                  onKeyDown={handleSearchInputKeyDown}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/15 focus:border-transparent text-sm"
+                  className="w-full px-4 py-2 pl-10 pr-9 border border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/15 focus:border-transparent text-sm"
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <i className="ri-search-line text-gray-400"></i>
                 </div>
+                {searchQuery.trim() && (
+                  <button
+                    type="button"
+                    onClick={clearSearchInput}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    aria-label="Clear search"
+                  >
+                    <i className="ri-close-line text-lg"></i>
+                  </button>
+                )}
               </div>
             </form>
           </div>
