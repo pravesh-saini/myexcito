@@ -5,7 +5,8 @@ urlpatterns = [
     # API routes
     path('products/', views.ProductList.as_view(), name='product-list'),
     path('products/<int:pk>/', views.ProductDetail.as_view(), name='product-detail'),
-    path('orders/', views.OrderCreate.as_view(), name='order-create'),
+    path('orders/', views.OrderList.as_view(), name='order-list'),
+    path('orders/create/', views.OrderCreate.as_view(), name='order-create'),
     path('orders/<int:pk>/', views.OrderDetail.as_view(), name='order-detail'),
     path('auth/request-otp/', views.RequestEmailOTP.as_view(), name='auth-request-otp'),
     path('auth/verify-otp/', views.VerifyEmailOTP.as_view(), name='auth-verify-otp'),

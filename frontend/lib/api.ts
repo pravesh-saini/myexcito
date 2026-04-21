@@ -55,6 +55,39 @@ export interface AuthUser {
   last_name?: string;
 }
 
+export interface Order {
+  id: number;
+  user: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  payment_mode: string;
+  address_line1: string;
+  address_line2?: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  status: string;
+  payment_status: string;
+  payment_reference?: string;
+  subtotal_amount: string;
+  shipping_fee: string;
+  discount_amount: string;
+  coupon_code?: string;
+  total_amount: string;
+  paid_at?: string;
+  items: {
+    product: number;
+    price: string;
+    quantity: number;
+    size?: string;
+    color?: string;
+  }[];
+  created_at: string;
+}
+
 const ENV_API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 function unique(values: string[]) {
@@ -62,8 +95,10 @@ function unique(values: string[]) {
 }
 
 function getApiBases() {
+  const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
   return unique([
     ENV_API_BASE || '',
+    `http://${currentHost}:8000/api`,
     'http://127.0.0.1:8000/api',
     'http://localhost:8000/api',
   ]);
@@ -97,12 +132,13 @@ export async function createOrder(data: OrderData) {
 
   for (const base of bases) {
     try {
-      const res = await fetch(`${base}/orders/`, {
+      const res = await fetch(`${base}/orders/create/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Idempotency-Key': idempotencyKey,
         },
+        credentials: 'include',
         body: JSON.stringify({
           ...data,
           idempotency_key: idempotencyKey,
@@ -142,6 +178,7 @@ export async function signupWithPassword(input: {
       const res = await fetch(`${base}/auth/signup/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(input),
       });
       if (!res.ok) {
@@ -176,6 +213,7 @@ export async function loginWithPassword(input: {
       const res = await fetch(`${base}/auth/login-password/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(input),
       });
       if (!res.ok) {
@@ -290,6 +328,7 @@ export async function verifyEmailOtp(email: string, otp: string): Promise<{ deta
       const res = await fetch(`${base}/auth/verify-otp/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, otp }),
       });
       if (!res.ok) {
@@ -326,6 +365,7 @@ export async function updatePassword(input: {
       const res = await fetch(`${base}/auth/update-password/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(input),
       });
       if (!res.ok) {
@@ -346,4 +386,24 @@ export async function updatePassword(input: {
   }
 
   throw lastError instanceof Error ? lastError : new Error('Password update failed');
+}
+
+export async function fetchOrders(): Promise<Order[]> {
+  const bases = getApiBases();
+  let lastError: unknown = null;
+
+  for (const base of bases) {
+    try {
+      const res = await fetch(`${base}/orders/`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error(`Failed to fetch orders (${res.status})`);
+      return res.json();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Failed to fetch orders');
 }

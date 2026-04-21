@@ -90,13 +90,20 @@ FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://127.0.0.1:3000').rstrip('/
 # Trust local dev and ngrok origins for browser form POSTs.
 CSRF_TRUSTED_ORIGINS = [
     FRONTEND_URL,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
     'https://*.ngrok-free.dev',
     'https://*.ngrok-free.app',
 ]
 
 
 # CORS
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    FRONTEND_URL,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 from corsheaders.defaults import default_headers
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "idempotency-key",
@@ -104,6 +111,10 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 
 # DRF
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
@@ -134,3 +145,11 @@ RATE_LIMIT_COUPON_VALIDATE_WINDOW_SECONDS = int(os.environ.get('RATE_LIMIT_COUPO
 # Payment webhook verification
 PAYMENT_WEBHOOK_SECRET = os.environ.get('PAYMENT_WEBHOOK_SECRET', 'dev-webhook-secret-change')
 PAYMENT_WEBHOOK_TOLERANCE_SECONDS = int(os.environ.get('PAYMENT_WEBHOOK_TOLERANCE_SECONDS', '300'))
+
+# Session and Cookie settings for local development across ports
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_NAME = 'excito_sessionid'
+CSRF_COOKIE_NAME = 'excito_csrftoken'

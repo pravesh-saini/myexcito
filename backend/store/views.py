@@ -1,3 +1,24 @@
+
+
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from .serializers import OrderSerializer
+
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    def enforce_csrf(self, request):
+        return  # Skip CSRF check for this session-based auth
+
+class OrderList(generics.ListAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CsrfExemptSessionAuthentication, BasicAuthentication]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Order.objects.filter(user=user).order_by('-created_at')
+
 import random
 import string
 import hashlib
@@ -43,6 +64,7 @@ class ProductDetail(generics.RetrieveAPIView):
 
 class OrderCreate(generics.CreateAPIView):
     serializer_class = OrderSerializer
+    authentication_classes = [CsrfExemptSessionAuthentication, BasicAuthentication]
 
     def create(self, request, *args, **kwargs):
         idempotency_key = (request.headers.get('Idempotency-Key') or request.data.get('idempotency_key') or '').strip()
@@ -97,6 +119,7 @@ class OrderCreate(generics.CreateAPIView):
 
 class OrderDetail(generics.RetrieveAPIView):
     serializer_class = OrderSerializer
+    authentication_classes = [CsrfExemptSessionAuthentication, BasicAuthentication]
     queryset = Order.objects.all()
 
 
@@ -225,6 +248,8 @@ class VerifyEmailOTP(APIView):
 
 
 class SignupWithPassword(APIView):
+    authentication_classes = []
+
     def post(self, request):
         email = (request.data.get('email') or '').strip().lower()
         password = (request.data.get('password') or '').strip()
@@ -270,6 +295,8 @@ class SignupWithPassword(APIView):
 
 
 class LoginWithPassword(APIView):
+    authentication_classes = []
+
     def post(self, request):
         email = (request.data.get('email') or '').strip().lower()
         password = (request.data.get('password') or '').strip()
