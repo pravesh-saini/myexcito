@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Pacifico } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from '@/context/CartContext';
+import { WishlistProvider } from '@/context/WishlistContext';
 import ThemeInitializer from '@/components/ThemeInitializer';
 import Header from '@/components/Header';
 
@@ -40,8 +41,10 @@ export default function RootLayout({
       >
         <ThemeInitializer />
         <CartProvider>
-          <Header />
-          {children}
+          <WishlistProvider>
+            <Header />
+            {children}
+          </WishlistProvider>
         </CartProvider>
       </body>
     </html>

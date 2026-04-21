@@ -38,9 +38,9 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Product, Order, EmailOTP, LoyaltyCoupon, ShippingSetting, PaymentWebhookEvent, log_stock_change
+from .models import Product, Order, EmailOTP, LoyaltyCoupon, ShippingSetting, PaymentWebhookEvent, log_stock_change, WishlistItem
 from .rate_limits import apply_rate_limits, get_client_ip
-from .serializers import ProductSerializer, OrderSerializer
+from .serializers import ProductSerializer, OrderSerializer, WishlistItemSerializer
 
 
 User = get_user_model()
@@ -660,3 +660,32 @@ class PaymentWebhookView(APIView):
             return False, 'Invalid webhook signature.'
 
         return True, ''
+
+class WishlistListCreateView(generics.ListCreateAPIView):
+    serializer_class = WishlistItemSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CsrfExemptSessionAuthentication, BasicAuthentication]
+
+    def get_queryset(self):
+        return WishlistItem.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        try:
+            serializer.save(user=self.request.user)
+        except IntegrityError:
+            # Already in wishlist, ignore
+            pass
+
+class WishlistDeleteView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CsrfExemptSessionAuthentication, BasicAuthentication]
+
+    def get_queryset(self):
+        return WishlistItem.objects.filter(user=self.request.user)
+
+    def get_object(self):
+        # We allow deleting by product_id
+        product_id = self.kwargs.get('product_id')
+        return generics.get_object_or_404(self.get_queryset(), product_id=product_id)
+
+

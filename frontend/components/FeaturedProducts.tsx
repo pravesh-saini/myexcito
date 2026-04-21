@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { fetchProducts, Product } from '@/lib/api';
 import QuickAddModal from '@/components/QuickAddModal';
+import { useWishlist } from '@/context/WishlistContext';
 
 const COLOR_MAP: Record<string, string> = {
   black: 'bg-black',
@@ -24,7 +25,7 @@ const COLOR_MAP: Record<string, string> = {
 const MAX_FEATURED = 12;
 
 export default function FeaturedProducts() {
-  const [favorites, setFavorites] = useState<number[]>([]);
+  const { isInWishlist, addWishlistItem, removeWishlistItem } = useWishlist();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -40,12 +41,17 @@ export default function FeaturedProducts() {
       .finally(() => setLoading(false));
   }, [reloadKey]);
 
-  const toggleFavorite = (productId: number) => {
-    setFavorites(prev =>
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
+  const toggleFavorite = async (productId: number) => {
+    try {
+      if (isInWishlist(productId)) {
+        await removeWishlistItem(productId);
+      } else {
+        await addWishlistItem(productId);
+      }
+    } catch (e) {
+      console.error('Failed to toggle wishlist', e);
+      // Optional: show a toast notification here
+    }
   };
 
   const handleAddToCart = (product: Product) => {
@@ -131,7 +137,7 @@ export default function FeaturedProducts() {
                   }}
                   className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-950 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                 >
-                  <i className={favorites.includes(product.id) ? 'ri-heart-fill text-red-500' : 'ri-heart-line text-gray-600 dark:text-gray-300'}></i>
+                  <i className={isInWishlist(product.id) ? 'ri-heart-fill text-red-500' : 'ri-heart-line text-gray-600 dark:text-gray-300'}></i>
                 </button>
 
                 {product.is_new && (

@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 import { fetchProducts, Product } from '@/lib/api';
 import ThemeToggle from './ThemeToggle';
 
@@ -53,7 +54,8 @@ export default function Header() {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [user, setUser] = useState<{ id?: number; email: string; firstName?: string; first_name?: string } | null>(null);
   const [avatarDataUrl, setAvatarDataUrl] = useState('');
-  const { totalItems } = useCart();
+  const { totalItems: cartTotalItems } = useCart();
+  const { totalItems: wishlistTotalItems } = useWishlist();
   const searchBoxRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const categoriesRef = useRef<HTMLDivElement>(null);
@@ -689,12 +691,13 @@ export default function Header() {
 
             <div className="flex items-center space-x-3">
               <ThemeToggle />
-              <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-all duration-300 cursor-pointer hover:scale-110">
+              <Link href="/wishlist" className="relative p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-all duration-300 cursor-pointer hover:scale-110">
                 <i className="ri-heart-line text-gray-600 dark:text-gray-300 w-5 h-5 flex items-center justify-center transition-colors duration-300"></i>
-              </button>
+                {wishlistTotalItems > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded-full animate-pulse">{wishlistTotalItems}</span>}
+              </Link>
               <button onClick={() => router.push('/cart')} className="relative p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-all duration-300 cursor-pointer hover:scale-110">
                 <i className="ri-shopping-cart-line text-gray-600 dark:text-gray-300 w-5 h-5 flex items-center justify-center transition-colors duration-300"></i>
-                {totalItems > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded-full animate-pulse">{totalItems}</span>}
+                {cartTotalItems > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded-full animate-pulse">{cartTotalItems}</span>}
               </button>
 
               {/* User menu */}

@@ -407,3 +407,65 @@ export async function fetchOrders(): Promise<Order[]> {
 
   throw lastError instanceof Error ? lastError : new Error('Failed to fetch orders');
 }
+
+export async function fetchWishlist(): Promise<{ id: number; product: Product; product_id: number; created_at: string }[]> {
+  const bases = getApiBases();
+  let lastError: unknown = null;
+
+  for (const base of bases) {
+    try {
+      const res = await fetch(`${base}/wishlist/`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error(`Failed to fetch wishlist (${res.status})`);
+      return res.json();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Failed to fetch wishlist');
+}
+
+export async function addToWishlist(productId: number): Promise<void> {
+  const bases = getApiBases();
+  let lastError: unknown = null;
+
+  for (const base of bases) {
+    try {
+      const res = await fetch(`${base}/wishlist/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ product_id: productId }),
+      });
+      if (!res.ok) throw new Error(`Failed to add to wishlist (${res.status})`);
+      return;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Failed to add to wishlist');
+}
+
+export async function removeFromWishlist(productId: number): Promise<void> {
+  const bases = getApiBases();
+  let lastError: unknown = null;
+
+  for (const base of bases) {
+    try {
+      const res = await fetch(`${base}/wishlist/${productId}/`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok && res.status !== 404) throw new Error(`Failed to remove from wishlist (${res.status})`);
+      return;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Failed to remove from wishlist');
+}

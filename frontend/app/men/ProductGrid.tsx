@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { fetchProducts, Product } from '@/lib/api';
 import QuickAddModal from '@/components/QuickAddModal';
+import { useWishlist } from '@/context/WishlistContext';
 
 interface ProductGridProps {
   selectedCategory: string;
@@ -22,7 +23,7 @@ export default function ProductGrid({ selectedCategory, sortBy, priceRange }: Pr
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [favorites, setFavorites] = useState<number[]>([]);
+  const { isInWishlist, addWishlistItem, removeWishlistItem } = useWishlist();
   const [quickAdd, setQuickAdd] = useState<{ product: Product; size: string; color: string } | null>(null);
 
   useEffect(() => {
@@ -33,8 +34,14 @@ export default function ProductGrid({ selectedCategory, sortBy, priceRange }: Pr
       .finally(() => setLoading(false));
   }, []);
 
-  const toggleFavorite = (id: number) =>
-    setFavorites(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleFavorite = async (id: number) => {
+    try {
+      if (isInWishlist(id)) await removeWishlistItem(id);
+      else await addWishlistItem(id);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleAddToCart = (product: Product) => {
     setQuickAdd({ product, size: product.sizes[0] || '', color: product.colors[0] || '' });
@@ -113,7 +120,7 @@ export default function ProductGrid({ selectedCategory, sortBy, priceRange }: Pr
               )}
               <button onClick={() => toggleFavorite(product.id)}
                 className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-950 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                <i className={favorites.includes(product.id) ? 'ri-heart-fill text-red-500' : 'ri-heart-line text-gray-600 dark:text-gray-300'}></i>
+                <i className={isInWishlist(product.id) ? 'ri-heart-fill text-red-500' : 'ri-heart-line text-gray-600 dark:text-gray-300'}></i>
               </button>
               {product.is_new && <span className="absolute top-3 left-3 bg-green-500 text-white px-2 py-1 rounded text-xs font-medium">New</span>}
               {product.on_sale && !product.is_new && <span className="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">Sale</span>}

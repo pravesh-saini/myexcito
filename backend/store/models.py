@@ -207,3 +207,15 @@ def log_stock_change(product, old_stock, new_stock, changed_by=None, reason=''):
         new_stock=new_stock,
         reason=reason,
     )
+
+class WishlistItem(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='wishlist_items', on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'product')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username}'s wishlist: {self.product.name}"

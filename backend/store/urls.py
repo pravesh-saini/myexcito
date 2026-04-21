@@ -16,6 +16,8 @@ urlpatterns = [
     path('shipping/config/', views.ShippingConfigView.as_view(), name='shipping-config'),
     path('coupons/validate/', views.ValidateCouponView.as_view(), name='coupon-validate'),
     path('payments/webhook/', views.PaymentWebhookView.as_view(), name='payment-webhook'),
+    path('wishlist/', views.WishlistListCreateView.as_view(), name='wishlist-list-create'),
+    path('wishlist/<int:product_id>/', views.WishlistDeleteView.as_view(), name='wishlist-delete'),
 ]
 
 # Custom Admin panel routes (under /admin/)

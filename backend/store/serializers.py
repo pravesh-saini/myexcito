@@ -4,7 +4,7 @@ from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from decimal import Decimal, ROUND_HALF_UP
-from .models import Product, Order, OrderItem, LoyaltyCoupon, ShippingSetting, log_stock_change
+from .models import Product, Order, OrderItem, LoyaltyCoupon, ShippingSetting, log_stock_change, WishlistItem
 
 
 User = get_user_model()
@@ -69,6 +69,20 @@ class ProductSerializer(serializers.ModelSerializer):
             resolved[color_key] = request.build_absolute_uri(media_path)
 
         return resolved
+
+
+class WishlistItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(), source='product', write_only=True
+    )
+
+    class Meta:
+        model = WishlistItem
+        fields = ('id', 'product', 'product_id', 'created_at')
+        read_only_fields = ('id', 'created_at')
+
+
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
