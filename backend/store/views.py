@@ -53,7 +53,11 @@ class ProductList(generics.ListAPIView):
         queryset = Product.objects.all().order_by('-id')
         category = self.request.query_params.get('category')
         if category:
-            queryset = queryset.filter(category=category)
+            if category.lower() == 'sale':
+                from django.db.models import Q
+                queryset = queryset.filter(Q(category__iexact=category) | Q(on_sale=True) | Q(discount__gt=0))
+            else:
+                queryset = queryset.filter(category=category)
         return queryset
 
 
