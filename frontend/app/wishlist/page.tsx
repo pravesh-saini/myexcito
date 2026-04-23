@@ -30,16 +30,16 @@ export default function WishlistPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-950 px-4 py-10">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-black text-gray-900 dark:text-gray-100 mb-8">My Wishlist</h1>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {[...Array(3)].map((_, i) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+            {[...Array(6)].map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="bg-gray-200 dark:bg-gray-800 rounded-lg h-64 mb-3"></div>
-                <div className="bg-gray-200 dark:bg-gray-800 h-4 rounded w-3/4 mb-2"></div>
-                <div className="bg-gray-200 dark:bg-gray-800 h-4 rounded w-1/2"></div>
+                <div className="bg-gray-200 dark:bg-gray-800 rounded-lg aspect-[4/5] mb-3"></div>
+                <div className="bg-gray-200 dark:bg-gray-800 h-3 rounded w-3/4 mb-2"></div>
+                <div className="bg-gray-200 dark:bg-gray-800 h-3 rounded w-1/2"></div>
               </div>
             ))}
           </div>
@@ -56,7 +56,7 @@ export default function WishlistPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
             {items.map((item) => {
               const product = item.product;
               if (!product) return null;
@@ -68,11 +68,11 @@ export default function WishlistPage() {
                       <img
                         src={product.image_url}
                         alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="w-full aspect-[4/5] object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <i className="ri-image-line text-4xl text-gray-300"></i>
+                      <div className="w-full aspect-[4/5] flex items-center justify-center">
+                        <i className="ri-image-line text-3xl text-gray-300"></i>
                       </div>
                     )}
                     
@@ -91,16 +91,16 @@ export default function WishlistPage() {
                     )}
                   </div>
                   
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1 line-clamp-1">
+                  <div className="p-3 sm:p-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-0.5 text-xs sm:text-sm line-clamp-1">
                       {product.name}
                     </h3>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="font-bold text-gray-900 dark:text-gray-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
                         ₹{Number(product.price).toLocaleString()}
                       </span>
                       {product.original_price && (
-                        <span className="text-sm text-gray-500 line-through">
+                        <span className="text-[10px] sm:text-xs text-gray-500 line-through">
                           ₹{Number(product.original_price).toLocaleString()}
                         </span>
                       )}
@@ -110,10 +110,10 @@ export default function WishlistPage() {
                       <button
                         onClick={() => handleAddToCart(product)}
                         disabled={product.stock_count === 0}
-                        className="flex-1 bg-black dark:bg-white text-white dark:text-black py-2 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 bg-black dark:bg-white text-white dark:text-black py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <i className="ri-shopping-cart-2-line"></i>
-                        {product.stock_count > 0 ? 'Add to Cart' : 'Out of Stock'}
+                        {product.stock_count > 0 ? 'Add' : 'Out'}
                       </button>
                     </div>
                   </div>

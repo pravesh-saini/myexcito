@@ -287,12 +287,12 @@ export default function ShopPage() {
           </div>
 
           {loading && (
-            <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="animate-pulse rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
-                  <div className="h-64 rounded-xl bg-gray-200 dark:bg-gray-800"></div>
-                  <div className="mt-4 h-4 w-3/4 rounded bg-gray-200 dark:bg-gray-800"></div>
-                  <div className="mt-2 h-4 w-1/2 rounded bg-gray-200 dark:bg-gray-800"></div>
+            <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="animate-pulse rounded-2xl border border-gray-200 bg-white p-2 dark:border-gray-800 dark:bg-gray-900">
+                  <div className="aspect-[4/5] rounded-xl bg-gray-200 dark:bg-gray-800"></div>
+                  <div className="mt-4 h-3 w-3/4 rounded bg-gray-200 dark:bg-gray-800"></div>
+                  <div className="mt-2 h-3 w-1/2 rounded bg-gray-200 dark:bg-gray-800"></div>
                 </div>
               ))}
             </div>
@@ -333,7 +333,7 @@ export default function ShopPage() {
           )}
 
           {!loading && !error && filteredProducts.length > 0 && (
-            <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {filteredProducts.map((product, idx) => (
                 <article
                   key={product.id}
@@ -343,47 +343,47 @@ export default function ShopPage() {
                 >
                   <div className="relative">
                     {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} className="h-72 w-full object-cover object-top transition duration-300 group-hover:scale-105" />
+                      <img src={product.image_url} alt={product.name} className="aspect-[4/5] w-full object-cover object-top transition duration-300 group-hover:scale-105" />
                     ) : (
-                      <div className="flex h-72 w-full items-center justify-center bg-gray-100 dark:bg-gray-800">
-                        <i className="ri-image-line text-4xl text-gray-400"></i>
+                      <div className="flex aspect-[4/5] w-full items-center justify-center bg-gray-100 dark:bg-gray-800">
+                        <i className="ri-image-line text-3xl text-gray-400"></i>
                       </div>
                     )}
                     {product.on_sale && (
                       <span className="absolute left-3 top-3 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white">Sale</span>
                     )}
                     {product.is_new && (
-                      <span className="absolute right-3 top-3 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">New</span>
+                      <span className="absolute right-3 top-3 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold text-white">New</span>
                     )}
                   </div>
 
-                  <div className="p-4">
-                    <h3 className="line-clamp-1 text-base font-semibold text-gray-900 dark:text-gray-100">{highlightMatch(product.name, search)}</h3>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  <div className="p-2.5 sm:p-3">
+                    <h3 className="line-clamp-1 text-xs sm:text-sm font-semibold text-gray-900 dark:text-gray-100">{highlightMatch(product.name, search)}</h3>
+                    <p className="mt-0.5 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
                       {highlightMatch(product.brand || 'Excito', search)} • {highlightMatch(product.section || 'All', search)}
                     </p>
 
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-2 flex flex-wrap gap-1.5">
                       {(product.colors || []).slice(0, 5).map((color, index) => (
                         <span
                           key={`${product.id}-${color}-${index}`}
-                          className={`h-5 w-5 rounded-full ${COLOR_MAP[color] || 'bg-gray-300'}`}
+                          className={`h-3 w-3 rounded-full ${COLOR_MAP[color] || 'bg-gray-300'}`}
                           title={color}
                         ></span>
                       ))}
                     </div>
 
-                    <div className="mt-4 flex items-center gap-2">
-                      <span className="text-lg font-bold text-gray-900 dark:text-gray-100">Rs {Number(product.price).toLocaleString()}</span>
+                    <div className="mt-2 sm:mt-3 flex items-center gap-2">
+                      <span className="text-sm sm:text-base font-bold text-gray-900 dark:text-gray-100">Rs {Number(product.price).toLocaleString()}</span>
                       {product.original_price && (
-                        <span className="text-sm text-gray-500 line-through dark:text-gray-400">Rs {Number(product.original_price).toLocaleString()}</span>
+                        <span className="text-[10px] sm:text-xs text-gray-500 line-through dark:text-gray-400">Rs {Number(product.original_price).toLocaleString()}</span>
                       )}
                     </div>
 
                     <button
                       onClick={() => openQuickAdd(product)}
                       disabled={product.stock_count <= 0}
-                      className="mt-4 w-full rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200 dark:disabled:bg-gray-700"
+                      className="mt-3 w-full rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200 dark:disabled:bg-gray-700"
                     >
                       {product.stock_count > 0 ? 'Select Options' : 'Out of Stock'}
                     </button>
