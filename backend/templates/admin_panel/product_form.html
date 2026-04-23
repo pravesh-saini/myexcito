@@ -127,9 +127,9 @@
       <!-- Right column -->
       <div class="space-y-6">
 
-        <!-- Image upload -->
+        <!-- Hero image upload -->
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 class="text-sm font-semibold text-gray-900 mb-5 pb-3 border-b border-gray-100">Product Image</h3>
+          <h3 class="text-sm font-semibold text-gray-900 mb-5 pb-3 border-b border-gray-100">Main Image</h3>
           {% if product and product.image %}
           <div class="mb-4">
             <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-40 object-cover rounded-xl bg-gray-50" />
@@ -150,9 +150,61 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
             </svg>
-            <span>Upload Image</span>
+            <span>Upload Main Image</span>
           </label>
           <img id="imagePreview" class="mt-3 w-full rounded-xl object-cover hidden" style="max-height:140px;" />
+        </div>
+
+        <!-- Gallery images -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div class="flex items-center justify-between mb-5 pb-3 border-b border-gray-100">
+            <h3 class="text-sm font-semibold text-gray-900">Gallery Images</h3>
+            <span id="galleryCount" class="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">0 images</span>
+          </div>
+
+          <!-- Existing gallery images grid -->
+          <div id="existingGallery" class="grid grid-cols-3 gap-2 mb-4">
+            {% for img in gallery_images %}
+            <div class="relative group rounded-xl overflow-hidden border border-gray-200 aspect-square" id="gallery-existing-{{ img.id }}">
+              <img src="{{ img.image.url }}" alt="{{ img.alt_text }}" class="w-full h-full object-cover" />
+              <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <label class="cursor-pointer flex flex-col items-center space-y-1">
+                  <input type="checkbox" name="delete_gallery_images" value="{{ img.id }}" class="hidden gallery-delete-checkbox" onchange="toggleDeleteMark(this, {{ img.id }})" />
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                  <span class="text-white text-[10px] font-medium">Remove</span>
+                </label>
+              </div>
+              <!-- Delete badge -->
+              <div id="delete-badge-{{ img.id }}" class="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md hidden">
+                REMOVING
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- New images preview grid -->
+          <div id="newGalleryPreview" class="grid grid-cols-3 gap-2 mb-4"></div>
+
+          <!-- Drop zone -->
+          <div id="galleryDropZone"
+            class="relative border-2 border-dashed border-gray-200 rounded-xl p-4 text-center hover:border-gray-400 hover:bg-gray-50/50 transition-all cursor-pointer"
+            onclick="document.getElementById('galleryInput').click()"
+          >
+            <input type="file" name="gallery_images" accept="image/*" multiple id="galleryInput" class="hidden" onchange="handleGalleryFiles(this.files)" />
+            <div class="flex flex-col items-center space-y-2 py-2">
+              <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-600">Add gallery images</p>
+                <p class="text-[11px] text-gray-400">Drop files or click • JPG, PNG, WebP</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Flags -->
@@ -204,8 +256,27 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<style>
+  #galleryDropZone.drag-over {
+    border-color: #374151;
+    background-color: rgba(243, 244, 246, 0.8);
+    transform: scale(1.01);
+  }
+  .gallery-thumb-enter {
+    animation: thumbIn 0.25s ease-out;
+  }
+  @keyframes thumbIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .marked-for-delete {
+    opacity: 0.4;
+    filter: grayscale(1);
+  }
+</style>
 <script>
 const existingColorImages = {{ color_image_urls_json|default:'{}'|safe }};
+let pendingFiles = [];
 
 function normalizeColorKey(value) {
   return String(value || '').trim().toLowerCase().replace(/\s+/g, '-');
@@ -223,6 +294,118 @@ function previewImage(input) {
   }
 }
 
+/* ─── Gallery logic ─── */
+function updateGalleryCount() {
+  const existing = document.querySelectorAll('#existingGallery > div:not(.hidden)').length;
+  const deletingCount = document.querySelectorAll('.gallery-delete-checkbox:checked').length;
+  const total = (existing - deletingCount) + pendingFiles.length;
+  const el = document.getElementById('galleryCount');
+  el.textContent = total + (total === 1 ? ' image' : ' images');
+}
+
+function toggleDeleteMark(checkbox, imgId) {
+  const container = document.getElementById('gallery-existing-' + imgId);
+  const badge = document.getElementById('delete-badge-' + imgId);
+  if (checkbox.checked) {
+    container.classList.add('marked-for-delete');
+    badge.classList.remove('hidden');
+  } else {
+    container.classList.remove('marked-for-delete');
+    badge.classList.add('hidden');
+  }
+  updateGalleryCount();
+}
+
+function handleGalleryFiles(fileList) {
+  if (!fileList || !fileList.length) return;
+
+  const dt = new DataTransfer();
+  // Keep existing pending files
+  pendingFiles.forEach(f => dt.items.add(f));
+  // Add new files
+  for (const file of fileList) {
+    if (file.type.startsWith('image/')) {
+      pendingFiles.push(file);
+      dt.items.add(file);
+      addGalleryPreviewThumb(file);
+    }
+  }
+  // Update the hidden file input with all files
+  document.getElementById('galleryInput').files = dt.files;
+  updateGalleryCount();
+}
+
+function addGalleryPreviewThumb(file) {
+  const container = document.getElementById('newGalleryPreview');
+  const idx = pendingFiles.indexOf(file);
+  const wrapper = document.createElement('div');
+  wrapper.className = 'relative group rounded-xl overflow-hidden border border-gray-200 aspect-square gallery-thumb-enter';
+  wrapper.id = 'gallery-new-' + idx;
+
+  const img = document.createElement('img');
+  img.className = 'w-full h-full object-cover';
+  img.alt = file.name;
+
+  const reader = new FileReader();
+  reader.onload = (e) => { img.src = e.target.result; };
+  reader.readAsDataURL(file);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer';
+  overlay.title = 'Remove';
+  overlay.innerHTML = '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+  overlay.addEventListener('click', () => {
+    removeNewGalleryFile(idx);
+  });
+
+  const badge = document.createElement('span');
+  badge.className = 'absolute top-1 left-1 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md';
+  badge.textContent = 'NEW';
+
+  wrapper.appendChild(img);
+  wrapper.appendChild(overlay);
+  wrapper.appendChild(badge);
+  container.appendChild(wrapper);
+}
+
+function removeNewGalleryFile(idx) {
+  pendingFiles.splice(idx, 1);
+  rebuildNewGalleryPreviews();
+  updateGalleryCount();
+}
+
+function rebuildNewGalleryPreviews() {
+  const container = document.getElementById('newGalleryPreview');
+  container.innerHTML = '';
+  const dt = new DataTransfer();
+  pendingFiles.forEach((file) => {
+    dt.items.add(file);
+    addGalleryPreviewThumb(file);
+  });
+  document.getElementById('galleryInput').files = dt.files;
+}
+
+/* ─── Drop zone ─── */
+const dropZone = document.getElementById('galleryDropZone');
+if (dropZone) {
+  ['dragenter', 'dragover'].forEach(evt => {
+    dropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+  });
+  ['dragleave', 'drop'].forEach(evt => {
+    dropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+    });
+  });
+  dropZone.addEventListener('drop', (e) => {
+    handleGalleryFiles(e.dataTransfer.files);
+  });
+}
+
+/* ─── Color image inputs ─── */
 function renderColorImageInputs() {
   const colorsInput = document.getElementById('colorsInput');
   const container = document.getElementById('colorImageInputs');
@@ -315,6 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
     colorsInput.addEventListener('input', renderColorImageInputs);
   }
   renderColorImageInputs();
+  updateGalleryCount();
 });
 </script>
 {% endblock %}

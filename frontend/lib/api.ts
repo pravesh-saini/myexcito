@@ -5,6 +5,7 @@ export interface Product {
   image_url: string;
   color_images?: Record<string, string>;
   color_image_urls?: Record<string, string>;
+  gallery_image_urls?: { id: number; url: string; alt_text: string; display_order: number }[];
   price: number;
   original_price?: number | null;
   category: string;
