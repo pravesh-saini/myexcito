@@ -18,10 +18,12 @@ class ProductImageSerializer(serializers.ModelSerializer):
         fields = ('id', 'image', 'image_url', 'alt_text', 'display_order')
 
     def get_image_url(self, obj):
+        if not obj.image:
+            return ''
         request = self.context.get('request')
-        if obj.image and request:
+        if request:
             return request.build_absolute_uri(obj.image.url)
-        return ''
+        return f"{settings.MEDIA_URL.rstrip('/')}/{obj.image.name.lstrip('/')}"
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -55,24 +57,30 @@ class ProductSerializer(serializers.ModelSerializer):
         )
 
     def get_image_url(self, obj):
+        if not obj.image:
+            return ''
         request = self.context.get('request')
-        if obj.image and request:
+        if request:
             return request.build_absolute_uri(obj.image.url)
-        return ''
+        return f"{settings.MEDIA_URL.rstrip('/')}/{obj.image.name.lstrip('/')}"
 
     def get_gallery_image_urls(self, obj):
         request = self.context.get('request')
-        if not request:
-            return []
-        return [
-            {
-                'id': img.id,
-                'url': request.build_absolute_uri(img.image.url),
-                'alt_text': img.alt_text,
-                'display_order': img.display_order,
-            }
-            for img in obj.gallery_images.all()
-        ]
+        images = []
+        for img in obj.gallery_images.all():
+            if img.image:
+                if request:
+                    url = request.build_absolute_uri(img.image.url)
+                else:
+                    url = f"{settings.MEDIA_URL.rstrip('/')}/{img.image.name.lstrip('/')}"
+                
+                images.append({
+                    'id': img.id,
+                    'url': url,
+                    'alt_text': img.alt_text,
+                    'display_order': img.display_order,
+                })
+        return images
 
     def get_color_image_urls(self, obj):
         request = self.context.get('request')

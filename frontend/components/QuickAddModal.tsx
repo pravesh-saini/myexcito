@@ -34,6 +34,7 @@ export default function QuickAddModal({ quickAdd, onClose }: QuickAddModalProps)
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [activeImageUrl, setActiveImageUrl] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -42,9 +43,19 @@ export default function QuickAddModal({ quickAdd, onClose }: QuickAddModalProps)
   useEffect(() => {
     if (!quickAdd) return;
     setSize(quickAdd.size || quickAdd.product.sizes?.[0] || '');
-    setColor(quickAdd.color || quickAdd.product.colors?.[0] || '');
+    const initialColor = quickAdd.color || quickAdd.product.colors?.[0] || '';
+    setColor(initialColor);
     setQuantity(clampQuantity(quickAdd.quantity || 1));
+    
+    // Set initial image from color or main image
+    setActiveImageUrl(getColorImageUrl(quickAdd.product, initialColor));
   }, [quickAdd]);
+
+  // Update image when color changes
+  useEffect(() => {
+    if (!quickAdd) return;
+    setActiveImageUrl(getColorImageUrl(quickAdd.product, color));
+  }, [color, quickAdd]);
 
   useEffect(() => {
     if (!quickAdd) return;
@@ -64,12 +75,16 @@ export default function QuickAddModal({ quickAdd, onClose }: QuickAddModalProps)
     };
   }, [quickAdd]);
 
-  const imageUrl = useMemo(() => {
-    if (!quickAdd) return '';
-    return getColorImageUrl(quickAdd.product, color);
-  }, [quickAdd, color]);
-
+  // We use activeImageUrl state instead of useMemo to allow manual gallery selection
+  
   if (!mounted || !quickAdd) return null;
+
+  const galleryImages = quickAdd.product.gallery_image_urls || [];
+  // Combine main image and gallery images for a full list
+  const allImages = [
+    { id: -1, url: quickAdd.product.image_url, alt_text: 'Main view' },
+    ...galleryImages
+  ];
 
   const increaseQuantity = () => setQuantity((prev) => clampQuantity(prev + 1));
   const decreaseQuantity = () => setQuantity((prev) => clampQuantity(prev - 1));
@@ -103,12 +118,31 @@ export default function QuickAddModal({ quickAdd, onClose }: QuickAddModalProps)
           </button>
         </div>
 
-        <div className="mb-4 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
-          {imageUrl ? (
-            <img src={imageUrl} alt={`${quickAdd.product.name} ${color}`} className="h-36 w-full object-cover" />
-          ) : (
-            <div className="flex h-36 w-full items-center justify-center bg-gray-100 dark:bg-gray-800">
-              <i className="ri-image-line text-3xl text-gray-300"></i>
+        <div className="mb-4">
+          <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+            {activeImageUrl ? (
+              <img src={activeImageUrl} alt={quickAdd.product.name} className="h-48 w-full object-contain" />
+            ) : (
+              <div className="flex h-48 w-full items-center justify-center">
+                <i className="ri-image-line text-3xl text-gray-300"></i>
+              </div>
+            )}
+          </div>
+          
+          {allImages.length > 1 && (
+            <div className="mt-2 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {allImages.map((img) => (
+                <button
+                  key={img.id}
+                  type="button"
+                  onClick={() => setActiveImageUrl(img.url)}
+                  className={`relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
+                    activeImageUrl === img.url ? 'border-black dark:border-white' : 'border-transparent opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <img src={img.url} alt={img.alt_text} className="h-full w-full object-cover" />
+                </button>
+              ))}
             </div>
           )}
         </div>
