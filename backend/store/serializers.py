@@ -4,15 +4,32 @@ from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from decimal import Decimal, ROUND_HALF_UP
-from .models import Product, Order, OrderItem, LoyaltyCoupon, ShippingSetting, log_stock_change, WishlistItem
+from .models import Product, ProductImage, Order, OrderItem, LoyaltyCoupon, ShippingSetting, log_stock_change, WishlistItem
 
 
 User = get_user_model()
 
 
+class ProductImageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductImage
+        fields = ('id', 'image', 'image_url', 'alt_text', 'display_order')
+
+    def get_image_url(self, obj):
+        if not obj.image:
+            return ''
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.image.url)
+        return f"{settings.MEDIA_URL.rstrip('/')}/{obj.image.name.lstrip('/')}"
+
+
 class ProductSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     color_image_urls = serializers.SerializerMethodField()
+    gallery_image_urls = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -24,6 +41,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'image_url',
             'color_images',
             'color_image_urls',
+            'gallery_image_urls',
             'price',
             'original_price',
             'category',
@@ -39,10 +57,30 @@ class ProductSerializer(serializers.ModelSerializer):
         )
 
     def get_image_url(self, obj):
+        if not obj.image:
+            return ''
         request = self.context.get('request')
-        if obj.image and request:
+        if request:
             return request.build_absolute_uri(obj.image.url)
-        return ''
+        return f"{settings.MEDIA_URL.rstrip('/')}/{obj.image.name.lstrip('/')}"
+
+    def get_gallery_image_urls(self, obj):
+        request = self.context.get('request')
+        images = []
+        for img in obj.gallery_images.all():
+            if img.image:
+                if request:
+                    url = request.build_absolute_uri(img.image.url)
+                else:
+                    url = f"{settings.MEDIA_URL.rstrip('/')}/{img.image.name.lstrip('/')}"
+                
+                images.append({
+                    'id': img.id,
+                    'url': url,
+                    'alt_text': img.alt_text,
+                    'display_order': img.display_order,
+                })
+        return images
 
     def get_color_image_urls(self, obj):
         request = self.context.get('request')

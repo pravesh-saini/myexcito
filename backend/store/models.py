@@ -35,6 +35,20 @@ class Product(models.Model):
         return self.name
 
 
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, related_name='gallery_images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='products/gallery/')
+    alt_text = models.CharField(max_length=255, blank=True)
+    display_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['display_order', 'id']
+
+    def __str__(self):
+        return f"{self.product.name} — Image #{self.display_order}"
+
+
 class Order(models.Model):
     PAYMENT_MODE_CHOICES = [
         ('cod', 'Cash on Delivery'),

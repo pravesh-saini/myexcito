@@ -21,7 +21,7 @@ import os
 import random
 import string
 import uuid
-from .models import Product, Order, OrderItem, StockHistory, LoyaltyCoupon, ShippingSetting, UserProfile, log_stock_change
+from .models import Product, ProductImage, Order, OrderItem, StockHistory, LoyaltyCoupon, ShippingSetting, UserProfile, log_stock_change
 
 User = get_user_model()
 
@@ -832,6 +832,17 @@ def admin_product_add(request):
             safe_name = ''.join(ch.lower() if ch.isalnum() else '-' for ch in name).strip('-') or 'product'
             product.image.save(f'{safe_name}.png', _placeholder_product_image(name), save=False)
         product.save()
+
+        # Handle gallery images
+        gallery_files = request.FILES.getlist('gallery_images')
+        for idx, gf in enumerate(gallery_files):
+            ProductImage.objects.create(
+                product=product,
+                image=gf,
+                alt_text=f'{product.name} gallery image {idx + 1}',
+                display_order=idx,
+            )
+
         log_stock_change(
             product=product,
             old_stock=0,
@@ -846,6 +857,7 @@ def admin_product_add(request):
         'action': 'Add',
         'product': None,
         'color_image_urls_json': json.dumps({}),
+        'gallery_images': [],
     })
 
 
@@ -881,6 +893,23 @@ def admin_product_edit(request, pk):
         if image:
             product.image = image
         product.save()
+
+        # Handle gallery image deletions
+        delete_ids = request.POST.getlist('delete_gallery_images')
+        if delete_ids:
+            ProductImage.objects.filter(product=product, id__in=delete_ids).delete()
+
+        # Handle new gallery images
+        gallery_files = request.FILES.getlist('gallery_images')
+        existing_max = product.gallery_images.count()
+        for idx, gf in enumerate(gallery_files):
+            ProductImage.objects.create(
+                product=product,
+                image=gf,
+                alt_text=f'{product.name} gallery image {existing_max + idx + 1}',
+                display_order=existing_max + idx,
+            )
+
         log_stock_change(
             product=product,
             old_stock=old_stock,
@@ -891,10 +920,22 @@ def admin_product_edit(request, pk):
         messages.success(request, f'Product "{product.name}" updated.')
         return redirect('admin_products')
     
+    gallery_images = product.gallery_images.all()
+    gallery_data = [
+        {
+            'id': img.id,
+            'url': request.build_absolute_uri(img.image.url),
+            'alt_text': img.alt_text,
+            'display_order': img.display_order,
+        }
+        for img in gallery_images
+    ]
     return render(request, 'admin_panel/product_form.html', {
         'action': 'Edit',
         'product': product,
         'color_image_urls_json': json.dumps(_resolve_color_image_urls(request, product.color_images)),
+        'gallery_images': gallery_images,
+        'gallery_data_json': json.dumps(gallery_data),
     })
 
 
