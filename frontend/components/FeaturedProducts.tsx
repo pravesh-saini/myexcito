@@ -77,13 +77,13 @@ export default function FeaturedProducts() {
           </Link>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
           {loading && (
-            [...Array(8)].map((_, i) => (
+            [...Array(12)].map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="bg-gray-200 dark:bg-gray-800 rounded-lg h-80 mb-3"></div>
-                <div className="bg-gray-200 dark:bg-gray-800 h-4 rounded w-3/4 mb-2"></div>
-                <div className="bg-gray-200 dark:bg-gray-800 h-4 rounded w-1/2"></div>
+                <div className="bg-gray-200 dark:bg-gray-800 rounded-lg aspect-[4/5] mb-3"></div>
+                <div className="bg-gray-200 dark:bg-gray-800 h-3 rounded w-3/4 mb-2"></div>
+                <div className="bg-gray-200 dark:bg-gray-800 h-3 rounded w-1/2"></div>
               </div>
             ))
           )}
@@ -122,11 +122,11 @@ export default function FeaturedProducts() {
                   <img
                     src={product.image_url}
                     alt={product.name}
-                    className="w-full h-80 object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                    className="w-full aspect-[4/5] object-cover object-top group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
-                  <div className="w-full h-80 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                    <i className="ri-image-line text-4xl text-gray-300"></i>
+                  <div className="w-full aspect-[4/5] bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    <i className="ri-image-line text-3xl text-gray-300"></i>
                   </div>
                 )}
 
@@ -173,12 +173,12 @@ export default function FeaturedProducts() {
                 </div>
               </div>
 
-              <div className="mt-4">
-                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">{product.name}</h3>
+              <div className="mt-2.5">
+                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-0.5 text-xs sm:text-sm line-clamp-1">{product.name}</h3>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-gray-900 dark:text-gray-100">₹{Number(product.price).toLocaleString()}</span>
+                  <span className="text-sm sm:text-base font-bold text-gray-900 dark:text-gray-100">₹{Number(product.price).toLocaleString()}</span>
                   {product.original_price && (
-                    <span className="text-sm text-gray-500 dark:text-gray-400 line-through">₹{Number(product.original_price).toLocaleString()}</span>
+                    <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 line-through">₹{Number(product.original_price).toLocaleString()}</span>
                   )}
                 </div>
               </div>
