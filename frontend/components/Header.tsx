@@ -602,7 +602,7 @@ export default function Header() {
               )}
             </div>
             
-            <Link href="/" className="text-2xl font-bold text-black dark:text-white cursor-pointer" style={{ fontFamily: '"Pacifico", serif' }}>
+            <Link href="/" className="text-xl md:text-2xl font-bold text-black dark:text-white cursor-pointer" style={{ fontFamily: '"Pacifico", serif' }}>
               EXCITO
             </Link>
           </div>
@@ -778,79 +778,119 @@ export default function Header() {
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-all duration-300 cursor-pointer"
+              aria-label="Toggle menu"
             >
-              <i className="ri-menu-line text-gray-600 dark:text-gray-300 w-5 h-5 flex items-center justify-center transition-colors duration-300"></i>
+              <i className={isMenuOpen ? "ri-close-line text-gray-600 dark:text-gray-300 text-xl" : "ri-menu-line text-gray-600 dark:text-gray-300 w-5 h-5 flex items-center justify-center transition-colors duration-300"}></i>
             </button>
           </div>
         </div>
 
-        {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-900">
-            <nav className="flex flex-col space-y-4">
-              {navLinks.map((link) => {
-                const isActive = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
-                const activeClasses = link.isAccent
-                  ? 'text-red-700 bg-red-50 dark:text-red-300 dark:bg-red-950/50'
-                  : 'text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-900';
-                const idleClasses = link.isAccent
-                  ? 'text-red-600 hover:text-red-700'
-                  : 'text-gray-700 dark:text-gray-200 hover:text-black dark:hover:text-white';
-
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setIsMenuOpen(false)}
-                    className={`rounded-lg px-2 py-1.5 transition-colors cursor-pointer font-medium ${isActive ? activeClasses : idleClasses}`}
-                  >
-                    {link.label}
-                  </Link>
-                );
-              })}
-            </nav>
-            <div className="mt-4 rounded-xl border border-gray-200 dark:border-gray-800 p-3 bg-gray-50 dark:bg-gray-900/40">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">Browse Categories</p>
-              <div className="grid grid-cols-2 gap-2">
-                {categoryCards.map((card) => (
-                  <Link
-                    key={`mobile-${card.href}`}
-                    href={card.href}
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-2 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800"
-                  >
-                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center ${card.iconBg}`}>
-                      <i className={`${card.icon} text-sm`}></i>
-                    </span>
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-200">{card.title.replace(' Collection', '')}</span>
-                  </Link>
-                ))}
-              </div>
+        {/* Mobile Search Bar - Visible only on mobile when menu is not open or as a separate section */}
+        <div className="md:hidden px-4 pb-4">
+          <form onSubmit={handleSearch} className="relative">
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchQuery}
+              onFocus={() => setIsSearchFocused(true)}
+              onKeyDown={handleSearchInputKeyDown}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 pl-10 pr-9 border border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40 text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/15 text-sm transition-all duration-300"
+            />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i className="ri-search-line text-gray-400"></i>
             </div>
-            <form onSubmit={handleSearch} className="mt-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onKeyDown={handleSearchInputKeyDown}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-2 pl-10 pr-9 border border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/15 focus:border-transparent text-sm"
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i className="ri-search-line text-gray-400"></i>
+            {searchQuery.trim() && (
+              <button
+                type="button"
+                onClick={clearSearchInput}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400"
+              >
+                <i className="ri-close-line text-lg"></i>
+              </button>
+            )}
+          </form>
+          {showSuggestionDropdown && (
+            <div className="absolute left-4 right-4 mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-950 z-[60]">
+              {suggestionItems.length > 0 ? (
+                <div className="max-h-60 overflow-y-auto py-1">
+                  {suggestionItems.map((suggestion) => (
+                    <button
+                      key={`${suggestion.kind}-${suggestion.value}`}
+                      type="button"
+                      onClick={() => handleSuggestionSelect(suggestion)}
+                      className="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-900"
+                    >
+                      <span className="text-sm text-gray-800 dark:text-gray-200 truncate">{suggestion.label}</span>
+                      <span className="text-[10px] uppercase tracking-wide text-gray-400">{suggestion.kind}</span>
+                    </button>
+                  ))}
                 </div>
-                {searchQuery.trim() && (
-                  <button
-                    type="button"
-                    onClick={clearSearchInput}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                    aria-label="Clear search"
-                  >
-                    <i className="ri-close-line text-lg"></i>
-                  </button>
-                )}
+              ) : (
+                <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                  Press Enter to search "{searchQuery}"
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {isMenuOpen && (
+          <div className="md:hidden fixed inset-0 top-16 bg-white dark:bg-gray-950 z-40 overflow-y-auto animate-in slide-in-from-right duration-300">
+            <div className="p-4 space-y-6">
+              <nav className="flex flex-col space-y-2">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-2">Navigation</p>
+                {navLinks.map((link) => {
+                  const isActive = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className={`px-4 py-3 rounded-xl text-base font-semibold transition-all ${
+                        isActive 
+                          ? (link.isAccent ? 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400' : 'bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white')
+                          : (link.isAccent ? 'text-red-600' : 'text-gray-700 dark:text-gray-300')
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              <div className="space-y-4">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest px-2">Categories</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {categoryCards.map((card) => (
+                    <Link
+                      key={card.href}
+                      href={card.href}
+                      className="relative h-24 rounded-xl overflow-hidden group"
+                    >
+                      <div 
+                        className="absolute inset-0 bg-cover bg-center"
+                        style={{ backgroundImage: `url('${card.imageUrl}')` }}
+                      />
+                      <div className={`absolute inset-0 bg-gradient-to-b ${card.bannerGradient} opacity-80`} />
+                      <div className="absolute inset-0 flex items-center justify-center p-2">
+                        <span className="text-white text-sm font-bold text-center leading-tight">{card.title}</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </form>
+
+              {!user && (
+                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100 dark:border-gray-900">
+                  <Link href="/login" className="flex items-center justify-center bg-gray-900 dark:bg-white text-white dark:text-gray-900 py-3 rounded-xl font-bold text-sm">
+                    Sign In
+                  </Link>
+                  <Link href="/signup" className="flex items-center justify-center border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 py-3 rounded-xl font-bold text-sm">
+                    Register
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

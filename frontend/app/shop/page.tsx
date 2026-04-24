@@ -66,6 +66,7 @@ export default function ShopPage() {
   const [category, setCategory] = useState<(typeof SHOP_CATEGORIES)[number]>('all');
   const [sortBy, setSortBy] = useState<(typeof SHOP_SORTS)[number]>('featured');
   const [quickAdd, setQuickAdd] = useState<{ product: Product; size: string; color: string } | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
     const urlSearch = (searchParams.get('search') || '').trim();
@@ -235,9 +236,22 @@ export default function ShopPage() {
   return (
     <>
       <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_40%,#ffffff_100%)] dark:bg-gray-950">
-        <section className="mx-auto max-w-7xl px-4 py-10 lg:px-8">
-          <div className="rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-950/90 md:p-6">
-            <div className="grid gap-4 md:grid-cols-4">
+        <section className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
+          <div className="md:hidden mb-6">
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="w-full flex items-center justify-between bg-white dark:bg-gray-900 px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm"
+            >
+              <div className="flex items-center gap-3">
+                <i className="ri-equalizer-line text-lg text-gray-500"></i>
+                <span className="font-bold text-gray-900 dark:text-gray-100">Filters & Sorting</span>
+              </div>
+              <i className={`ri-arrow-down-s-line text-xl transition-transform duration-300 ${isFilterOpen ? 'rotate-180' : ''}`}></i>
+            </button>
+          </div>
+
+          <div className={`${isFilterOpen ? 'block' : 'hidden'} md:block rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-950/90 md:p-6 mb-8`}>
+            <div className="grid gap-6 md:grid-cols-4">
               <div className="md:col-span-2">
                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
                 <input

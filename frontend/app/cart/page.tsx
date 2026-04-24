@@ -46,48 +46,55 @@ export default function CartPage() {
               {items.map((item, idx) => {
                 const itemImageUrl = getColorImageUrl(item.product, item.color);
                 return (
-                  <div key={idx} className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 pb-4">
-                    {itemImageUrl ? (
-                      <img src={itemImageUrl} alt={item.product.name} className="w-16 h-16 object-cover rounded-xl" />
-                    ) : (
-                      <div className="w-16 h-16 rounded-xl bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-                        <i className="ri-image-line text-xl text-gray-300" />
+                  <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-4 border-b border-gray-100 dark:border-gray-800 pb-6 last:border-0 last:pb-0">
+                    <div className="flex items-center gap-4 flex-1">
+                      {itemImageUrl ? (
+                        <img src={itemImageUrl} alt={item.product.name} className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl shadow-sm" />
+                      ) : (
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-gray-100 dark:bg-gray-900 flex items-center justify-center border border-gray-100 dark:border-gray-800">
+                          <i className="ri-image-line text-2xl text-gray-300" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-gray-100 truncate">{item.product.name}</h3>
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                          {item.size ? `Size ${item.size}` : 'Size —'} · {item.color ? item.color : 'Color —'}
+                        </p>
+                        <p className="text-sm sm:text-base font-black text-gray-900 dark:text-gray-100 mt-2 sm:hidden">₹{(Number(item.product.price) * item.quantity).toLocaleString()}</p>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{item.product.name}</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                        {item.size ? `Size ${item.size}` : 'Size —'} · {item.color ? item.color : 'Color —'}
-                      </p>
-                      <div className="mt-2 inline-flex items-center overflow-hidden rounded-lg border border-gray-300 dark:border-gray-700">
+                    </div>
+                    
+                    <div className="flex items-center justify-between sm:justify-end gap-6 sm:gap-8">
+                      <div className="inline-flex items-center overflow-hidden rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900">
                         <button
                           type="button"
                           onClick={() => updateItemQuantity(idx, item.quantity - 1)}
-                          className="px-2.5 py-1 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-900"
+                          className="px-3 py-1.5 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
                           aria-label="Decrease quantity"
                         >
-                          -
+                          <i className="ri-subtract-line text-xs"></i>
                         </button>
-                        <input
-                          type="number"
-                          min={1}
-                          max={99}
-                          value={item.quantity}
-                          onChange={(event) => updateItemQuantity(idx, Number(event.target.value || 1))}
-                          className="w-12 border-x border-gray-300 bg-transparent px-1 py-1 text-center text-sm text-gray-900 outline-none dark:border-gray-700 dark:text-gray-100"
-                        />
+                        <span className="w-10 text-center text-sm font-bold text-gray-900 dark:text-gray-100">
+                          {item.quantity}
+                        </span>
                         <button
                           type="button"
                           onClick={() => updateItemQuantity(idx, item.quantity + 1)}
-                          className="px-2.5 py-1 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-900"
+                          className="px-3 py-1.5 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
                           aria-label="Increase quantity"
                         >
-                          +
+                          <i className="ri-add-line text-xs"></i>
                         </button>
                       </div>
-                      <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mt-1">₹{(Number(item.product.price) * item.quantity).toLocaleString()}</p>
+                      
+                      <div className="text-right hidden sm:block min-w-[80px]">
+                        <p className="text-sm sm:text-base font-black text-gray-900 dark:text-gray-100">₹{(Number(item.product.price) * item.quantity).toLocaleString()}</p>
+                      </div>
+
+                      <button onClick={() => removeItem(idx)} className="p-2 text-gray-400 hover:text-red-500 transition-colors" aria-label="Remove item">
+                        <i className="ri-delete-bin-line text-lg"></i>
+                      </button>
                     </div>
-                    <button onClick={() => removeItem(idx)} className="text-sm text-red-600 hover:text-red-700 font-semibold">Remove</button>
                   </div>
                 );
               })}

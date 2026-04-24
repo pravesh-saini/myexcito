@@ -152,19 +152,19 @@
       <thead>
         <tr class="border-b border-gray-100">
           <th class="text-left text-xs text-gray-400 font-medium pb-3">User</th>
-          <th class="text-left text-xs text-gray-400 font-medium pb-3">Email</th>
-          <th class="text-left text-xs text-gray-400 font-medium pb-3">Status</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3 hidden sm:table-cell">Email</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3 hidden md:table-cell">Status</th>
           <th class="text-left text-xs text-gray-400 font-medium pb-3">Orders</th>
           <th class="text-left text-xs text-gray-400 font-medium pb-3">Spent</th>
-          <th class="text-left text-xs text-gray-400 font-medium pb-3">Coupon</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3 text-right">Coupon</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-50">
         {% for user in user_insights %}
         <tr class="hover:bg-gray-50 transition-colors">
           <td class="py-3 font-medium text-gray-900">{{ user.username }}</td>
-          <td class="py-3 text-gray-600">{{ user.email|default:'-' }}</td>
-          <td class="py-3">
+          <td class="py-3 text-gray-600 hidden sm:table-cell">{{ user.email|default:'-' }}</td>
+          <td class="py-3 hidden md:table-cell">
             <span class="px-2.5 py-1 rounded-full text-xs font-semibold
               {% if user.loyalty_status == 'Platinum' %}bg-slate-200 text-slate-800
               {% elif user.loyalty_status == 'Gold' %}bg-amber-100 text-amber-700
@@ -174,7 +174,7 @@
           </td>
           <td class="py-3 text-gray-800">{{ user.order_count }}</td>
           <td class="py-3 font-semibold text-gray-900">₹{{ user.total_spend|floatformat:0 }}</td>
-          <td class="py-3">
+          <td class="py-3 text-right">
             {% if user.active_coupon_code %}
             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
               Active: {{ user.active_coupon_code }}
@@ -222,19 +222,19 @@
       <thead>
         <tr class="border-b border-gray-100">
           <th class="text-left text-xs text-gray-400 font-medium pb-3">User</th>
-          <th class="text-left text-xs text-gray-400 font-medium pb-3">Email</th>
-          <th class="text-left text-xs text-gray-400 font-medium pb-3">User Status</th>
-          <th class="text-left text-xs text-gray-400 font-medium pb-3">Total Orders</th>
-          <th class="text-left text-xs text-gray-400 font-medium pb-3">Amount Shopped</th>
-          <th class="text-left text-xs text-gray-400 font-medium pb-3">Coupon Action</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3 hidden sm:table-cell">Email</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3 hidden md:table-cell">User Status</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Orders</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3">Amount</th>
+          <th class="text-left text-xs text-gray-400 font-medium pb-3 text-right">Coupon Action</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-50">
         {% for shopper in top_shoppers %}
         <tr class="hover:bg-gray-50 transition-colors">
           <td class="py-3 font-medium text-gray-900">{{ shopper.display_name }}</td>
-          <td class="py-3 text-gray-600">{{ shopper.display_email }}</td>
-          <td class="py-3">
+          <td class="py-3 text-gray-600 hidden sm:table-cell">{{ shopper.display_email }}</td>
+          <td class="py-3 hidden md:table-cell">
             <span class="px-2.5 py-1 rounded-full text-xs font-semibold
               {% if shopper.loyalty_status == 'Platinum' %}bg-slate-200 text-slate-800
               {% elif shopper.loyalty_status == 'Gold' %}bg-amber-100 text-amber-700
@@ -244,7 +244,7 @@
           </td>
           <td class="py-3 text-gray-800">{{ shopper.order_count }}</td>
           <td class="py-3 font-semibold text-gray-900">₹{{ shopper.total_spend|floatformat:0 }}</td>
-          <td class="py-3">
+          <td class="py-3 text-right">
             {% if shopper.active_coupon_code %}
             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
               Active: {{ shopper.active_coupon_code }}

@@ -128,30 +128,33 @@ export default function OrdersPage() {
             {orders.map((order) => (
               <article key={`${order.id}-${order.createdAt}`} className="ui-card overflow-hidden group hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-300 shadow-sm hover:shadow-md">
                 {/* Order Header */}
-                <div className="bg-gray-50/50 dark:bg-gray-800/30 px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                <div className="bg-gray-50/50 dark:bg-gray-800/30 px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 flex-1">
                     <div>
                       <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Order ID</p>
-                      <p className="text-sm font-mono font-bold text-gray-900 dark:text-gray-100">#{order.id}</p>
+                      <p className="text-sm font-mono font-bold text-gray-900 dark:text-gray-100 truncate">#{order.id}</p>
                     </div>
                     <div>
                       <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Date Placed</p>
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Total Amount</p>
+                      <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Total</p>
                       <p className="text-sm font-bold text-gray-900 dark:text-gray-100">₹{order.totalAmount.toLocaleString()}</p>
                     </div>
-                    <div>
+                    <div className="hidden sm:block">
                       <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Payment</p>
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300 uppercase">{order.paymentMode}</p>
                     </div>
                   </div>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${getStatusColor(order.status)}`}>
-                    {order.status || 'Pending'}
-                  </span>
+                  <div className="flex items-center justify-between lg:justify-end gap-3 mt-2 lg:mt-0">
+                    <span className="sm:hidden text-[10px] uppercase tracking-wider font-bold text-gray-400">Status</span>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${getStatusColor(order.status)}`}>
+                      {order.status || 'Pending'}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Order Items */}
