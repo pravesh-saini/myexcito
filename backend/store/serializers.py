@@ -125,10 +125,20 @@ class WishlistItemSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    product_image_url = serializers.SerializerMethodField()
     
     class Meta:
         model = OrderItem
-        fields = ('product', 'price', 'quantity', 'size', 'color')
+        fields = ('product', 'product_name', 'product_image_url', 'price', 'quantity', 'size', 'color')
+
+    def get_product_image_url(self, obj):
+        if not obj.product or not obj.product.image:
+            return ''
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.product.image.url)
+        return f"{settings.MEDIA_URL.rstrip('/')}/{obj.product.image.name.lstrip('/')}"
 
 
 class OrderSerializer(serializers.ModelSerializer):

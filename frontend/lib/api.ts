@@ -81,6 +81,8 @@ export interface Order {
   paid_at?: string;
   items: {
     product: number;
+    product_name: string;
+    product_image_url: string;
     price: string;
     quantity: number;
     size?: string;
